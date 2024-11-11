@@ -1,0 +1,387 @@
+# Specifications:
+# view specifications.txt
+
+# • setMyUserName
+# • getMyConversations
+# • getConversation
+# • sendMessage
+# • forwardMessage
+# • commentMessage
+# • uncommentMessage
+# • deleteMessage
+# • addToGroup
+# • leaveGroup
+# • setGroupName
+# • setMyPhoto
+# • setGroupPhoto
+
+# setBlahBlahBlah uses PUT because it updates the user's name, group name, user's photo, and group photo.
+# this is because the resource is being updated or created at aknown URI.
+
+openapi: '3.0.2'
+info: {
+  title: WASAText,
+  version: '1.0',
+  description: "Sadly missed the opportunity to name it 'Wasapp'.",
+  contact: {}
+  }
+servers:
+  - url: https://wasatext.com
+
+tags:
+  - name: login
+    description: Operations related to user login
+  - name: user
+    description: Operations related to user management
+  - name: conversation
+    description: Operations related to conversations
+  - name: message
+    description: Operations related to messages
+  - name: group
+    description: Operations related to groups
+
+paths:
+  /session:
+    post:
+      tags: ["login"]
+      description : logs in the user.
+      operationId: doLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Maria
+                  minLength: 3
+                  maxLength: 16
+      responses:
+        '201':
+          description: User log-in action successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identifier:
+                    type: string
+                    example: "abcdef012345"
+
+  /users/{userId}/username:
+    put:
+      tags: ["user"]
+      description: Update user’s name
+      operationId: setMyUserName
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newName:
+                  type: string
+                  example: "NewName"
+      responses:
+        '200':
+          description: Username updated successfully
+
+  /users/{userId}/conversations:
+    get:
+      tags: ["conversation"]
+      description: Retrieve user's conversations
+      operationId: getMyConversations
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    conversationId:
+                      type: string
+                    lastMessage:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+
+  /conversations/{conversationId}:
+    get:
+      tags: ["conversation"]
+      description: Retrieve a single conversation
+      operationId: getConversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Details of the conversation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversationId:
+                    type: string
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        messageId:
+                          type: string
+                        sender:
+                          type: string
+                        content:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+
+  /messages:
+    post:
+      tags: ["message"]
+      description: Send a new message
+      operationId: sendMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Message sent successfully
+
+  /messages/{messageId}/forward:
+    post:
+      tags: ["message"]
+      description: Forward a message
+      operationId: forwardMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetConversationId:
+                  type: string
+      responses:
+        '200':
+          description: Message forwarded successfully
+
+  /messages/{messageId}/comment:
+    post:
+      tags: ["message"]
+      description: Comment on a message
+      operationId: commentMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Comment added successfully
+
+  /messages/{messageId}/uncomment:
+    delete:
+      tags: ["message"]
+      description: Remove comment from a message
+      operationId: uncommentMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment removed successfully
+
+  /messages/{messageId}:
+    delete:
+      tags: ["message"]
+      description: Delete a message
+      operationId: deleteMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message deleted successfully
+
+  /groups/{groupId}/members:
+    post:
+      tags: ["group"]
+      description: Add a user to a group
+      operationId: addToGroup
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: User added to group successfully
+
+  /groups/{groupId}/leave:
+    post:
+      tags: ["group"]
+      description: Leave a group
+      operationId: leaveGroup
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User left the group successfully
+
+  /users/{userId}/photo:
+    put:
+      tags: ["user"]
+      description: Update user profile photo
+      operationId: setMyPhoto
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Profile photo updated successfully
+
+  /groups/{groupId}/photo:
+    put:
+      tags: ["group"]
+      description: Update group photo
+      operationId: setGroupPhoto
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Group photo updated successfully
+
+  /groups/{groupId}/name:
+    put:
+      tags: ["group"]
+      description: Update group name
+      operationId: setGroupName
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newName:
+                  type: string
+                  example: "NewGroupName"
+      responses:
+        '200':
+          description: Group name updated successfully
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
+security:
+  - bearerAuth: []
