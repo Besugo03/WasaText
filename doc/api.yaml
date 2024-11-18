@@ -18,6 +18,8 @@
 # setBlahBlahBlah uses PUT because it updates the user's name, group name, user's photo, and group photo.
 # this is because the resource is being updated or created at aknown URI.
 
+# try to see wether its better to have the userID in the path or in the body of the request.
+
 openapi: '3.0.2'
 info: {
   title: WASAText,
@@ -45,6 +47,7 @@ paths:
     post:
       tags: ["login"]
       description : logs in the user.
+      summary: User log-in
       operationId: doLogin
       requestBody:
         required: true
@@ -70,17 +73,19 @@ paths:
                     type: string
                     example: "abcdef012345"
 
-  /users/{userId}/username:
+  /users/{user_id}/username:
     put:
       tags: ["user"]
       description: Update user’s name
+      summary: Update user’s name
       operationId: setMyUserName
       parameters:
-        - name: userId
+        - name: user_id
+          description: ID of the user
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UserId'
       requestBody:
         required: true
         content:
@@ -88,49 +93,63 @@ paths:
             schema:
               type: object
               properties:
-                newName:
+                new_name:
                   type: string
                   example: "NewName"
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Username updated successfully
 
-  /users/{userId}/conversations:
+  /users/{user_id}/conversations:
     get:
       tags: ["conversation"]
       description: Retrieve user's conversations
+      summary: Retrieve user's conversations
       operationId: getMyConversations
       parameters:
-        - name: userId
+        - name: user_id
+          description: ID of the user
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UserId'
       responses:
         '200':
           description: List of conversations
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    conversationId:
-                      type: string
-                    lastMessage:
-                      type: string
-                    timestamp:
-                      type: string
-                      format: date-time
+                type: object
+                properties:
+                  conversations:  # remember to wrap the array in an object field
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        conversation_id:
+                          type: string
+                        last_message:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                required:
+                  - conversations  # Explicitly require 'conversations' field
 
-  /conversations/{conversationId}:
+  /conversations/{conversation_id}:
     get:
       tags: ["conversation"]
       description: Retrieve a single conversation
+      summary: Retrieve a single conversation
       operationId: getConversation
       parameters:
-        - name: conversationId
+        - name: conversation_id
           in: path
           required: true
           schema:
@@ -142,16 +161,18 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - messages  # Explicitly require 'messages' field
                 properties:
-                  conversationId:
+                  conversation_id:
                     type: string
                   messages:
                     type: array
                     items:
                       type: object
                       properties:
-                        messageId:
-                          type: string
+                        message_id:
+                          $ref: '#/components/schemas/MessageId'
                         sender:
                           type: string
                         content:
@@ -159,11 +180,13 @@ paths:
                         timestamp:
                           type: string
                           format: date-time
+                    minItems: 0 # 'messages' can still be empty though
 
   /messages:
     post:
       tags: ["message"]
       description: Send a new message
+      summary: Send a new message
       operationId: sendMessage
       requestBody:
         required: true
@@ -172,7 +195,7 @@ paths:
             schema:
               type: object
               properties:
-                conversationId:
+                conversation_id:
                   type: string
                 content:
                   type: string
@@ -180,17 +203,19 @@ paths:
         '201':
           description: Message sent successfully
 
-  /messages/{messageId}/forward:
+  /messages/{message_id}/forward:
     post:
       tags: ["message"]
       description: Forward a message
+      summary: Forward a message
       operationId: forwardMessage
       parameters:
-        - name: messageId
+        - name: message_id
+          description: ID of the message
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/MessageId'
       requestBody:
         required: true
         content:
@@ -198,186 +223,313 @@ paths:
             schema:
               type: object
               properties:
-                targetConversationId:
+                target_conversation_id:
                   type: string
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Message forwarded successfully
 
-  /messages/{messageId}/comment:
+  /messages/{message_id}/comment:
     post:
       tags: ["message"]
       description: Comment on a message
+      summary: Comment on a message
       operationId: commentMessage
       parameters:
-        - name: messageId
+        - name: message_id
+          description: ID of the message
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/MessageId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
+              description: the object that contains the new comment for a message
               type: object
               properties:
                 comment:
+                  description: A valid comment for a message.
+                  maxLength: 1000
+                  minLength: 1
+                  pattern: "^.*$" # any string
+                  example: "This is a comment."
                   type: string
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Comment added successfully
 
-  /messages/{messageId}/uncomment:
+  /messages/{message_id}/uncomment:
     delete:
       tags: ["message"]
       description: Remove comment from a message
+      summary: Remove comment from a message
       operationId: uncommentMessage
       parameters:
-        - name: messageId
+        - name: message_id
+          description: ID of the message
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/MessageId'
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Comment removed successfully
 
-  /messages/{messageId}:
+  /messages/{message_id}:
     delete:
       tags: ["message"]
       description: Delete a message
+      summary: Delete a message
       operationId: deleteMessage
       parameters:
-        - name: messageId
+        - name: message_id
+          description: ID of the message
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/MessageId'
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Message deleted successfully
 
-  /groups/{groupId}/members:
+  /groups/{group_id}/members:
     post:
       tags: ["group"]
       description: Add a user to a group
+      summary: Add a user to a group
       operationId: addToGroup
       parameters:
-        - name: groupId
+        - name: group_id
+          description: ID of the group
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/GroupId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
+              description: the object that contains the new user for a group
               type: object
               properties:
-                userId:
-                  type: string
+                user_id:
+                  $ref: '#/components/schemas/UserId'
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: User added to group successfully
 
-  /groups/{groupId}/leave:
+  /groups/{group_id}/leave:
     post:
       tags: ["group"]
       description: Leave a group
+      summary: Leave a group
       operationId: leaveGroup
       parameters:
-        - name: groupId
+        - name: group_id
+          description: ID of the group
           in: path
           required: true
           schema:
-            type: string
-        - name: userId
+            $ref: '#/components/schemas/GroupId'
+        - name: user_id
+          description: ID of the user
           in: query
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UserId'
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: User left the group successfully
 
-  /users/{userId}/photo:
+  /users/{user_id}/photo:
     put:
       tags: ["user"]
       description: Update user profile photo
+      summary: Update user profile photo
       operationId: setMyPhoto
       parameters:
-        - name: userId
+        - name: user_id
+          description: ID of the user
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UserId'
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
+              description: the object that contains the new photo for a group
               type: object
               properties:
                 photo:
+                  description: A valid image file as a binary string with a maximum size of 1MB.
                   type: string
+                  minLength: 1
+                  maxLength: 1000000
                   format: binary
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Profile photo updated successfully
 
-  /groups/{groupId}/photo:
+  /groups/{group_id}/photo:
     put:
       tags: ["group"]
       description: Update group photo
+      summary: Update group photo
       operationId: setGroupPhoto
       parameters:
-        - name: groupId
+        - name: group_id
+          description: ID of the group
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/GroupId'
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
+              description: the object that contains the new photo for a group
               type: object
               properties:
                 photo:
+                  description: A valid image file as a binary string with a maximum size of 1MB.
                   type: string
+                  minLength: 1
+                  maxLength: 1000000
                   format: binary
       responses:
         '200':
           description: Group photo updated successfully
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
 
-  /groups/{groupId}/name:
+  /groups/{group_id}/name:
     put:
       tags: ["group"]
       description: Update group name
+      summary: Update group name
       operationId: setGroupName
       parameters:
-        - name: groupId
+        - name: group_id
+          description: ID of the group
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/GroupId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                newName:
-                  type: string
-                  example: "NewGroupName"
+                 $ref: '#/components/schemas/ValidName'
       responses:
         '200':
+          content:
+            application/json:
+              example:
+                message: "OK"
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
           description: Group name updated successfully
 
+# Security Definitions
 components:
+  schemas:
+    MessageId:
+      description: A valid message id
+      type: string
+      example: "abcdef012345"
+      minLength: 12
+      maxLength: 128
+      pattern: "^[A-Za-z0-9n]*$"
+    UserId:
+      description: A valid user id
+      type: string
+      example: "abcdef012345"
+      minLength: 12
+      maxLength: 128
+      pattern: "^[A-Za-z0-9n]*$"
+    GroupId:
+      description: A valid group id
+      type: string
+      example: "creatorUser-group1"
+      minLength: 3
+      maxLength: 128
+      pattern: "^[A-Za-z0-9-]*$"
+    ValidName:
+      description: the object that contains the new name for a user or group
+      type: object
+      properties:
+        name:
+          description: A valid, pattern-checked name for a user or group.
+          type: string
+          minLength: 3
+          maxLength: 16
+          pattern: "^[A-Za-z0-9]*$"
+          example: "NewName"
+    SuccessResponse:
+      description: a generic success response for non-get requests.
+      type: object
+      properties:
+        message:
+          description: A message indicating the success of the action
+          type: string
+          example: "OK"
+          minLength: 2
+          maxLength: 100
+          pattern: "^[A-Za-z0-9 ]*$"
   securitySchemes:
     bearerAuth:
       type: http
