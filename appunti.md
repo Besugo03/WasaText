@@ -1,0 +1,1 @@
+- aggiungere (se necessario) nella documentazione dell'api che l'autenticazione viene mandata col parametro "Authentication" negli header delle richieste.
