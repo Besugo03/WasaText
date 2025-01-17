@@ -41,6 +41,22 @@ type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
 
+	CheckUsersTable() error
+	GetUser(username string) (string, error)
+	GetUserName(userid string) (string, error)
+	SetUser(username, userid string) error // userid is basically its auth token and identifier.
+
+	CheckConversationsTable() error
+	CreateConversation(conversationID string, isGroup bool, name string, picture string) error
+	UpdateConversation(conversationID string, isGroup bool, name string, picture string) error
+	DeleteConversation(conversationID string) error
+	GetConversationInfo(conversationID string) (string, bool, string, string, error)
+	GetUserConversations(userID string) ([]string, error)
+
+	AddParticipant(conversationID string, userID string) error
+	RemoveParticipant(conversationID string, userID string) error
+	GetParticipants(conversationID string) ([]string, error)
+
 	Ping() error
 }
 

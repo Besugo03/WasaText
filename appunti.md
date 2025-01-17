@@ -1,1 +1,5 @@
 - aggiungere (se necessario) nella documentazione dell'api che l'autenticazione viene mandata col parametro "Authentication" negli header delle richieste.
+- C'é un po' di confusione fra user_id, authorization etc...
+  - L'user ID e nome utente dovrebbero essere la stessa cosa
+  - l' "authorization" dovrebbe essere il token di autenticazione univoco per utente.
+  - Tutto ció da chiarire anche sull'API.

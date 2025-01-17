@@ -15,14 +15,15 @@ def test_hello_world():
         print("Status Code:", response.status_code)
         print("Response:", response.text)
 
-def test_login():
+def test_login(username):
     url = f"{BASE_URL}/session"
     data = {
-        "name": "testuser"
+        "username": f"{username}",
     }
     response = requests.post(url, json=data)
-    if response.status_code == 200:
+    if response.status_code == 200 or response.status_code == 201:
         print("Login Test Passed")
+        print("Status Code:", response.status_code)
         print("Response:", response.text)
     else:
         print("Login Test Failed")
@@ -30,15 +31,15 @@ def test_login():
         print("Response:", response.text)
     return response.json()["identifier"]
 
-def test_getConversations():
-    url = f"{BASE_URL}/users/testuser/conversations"
+def test_getConversations(userID):
+    url = f"{BASE_URL}/conversations"
     data = {
-        "Authorization" : userID,
+        "Authorization" : "Bearer " + userID,
     }
     response = requests.get(url, headers=data)
     if response.status_code == 200:
         print("Get Conversations Test Passed")
-        print("Response:", response.text)
+        print("Response:", response.text) 
     else:
         print("Get Conversations Test Failed")
         print("Status Code:", response.status_code)
@@ -49,6 +50,14 @@ if __name__ == "__main__":
     # Test "Hello World" endpoint
     test_hello_world()
 
-    userID = test_login()
+    user1 = test_login("testuser")
+    user2 = test_login("besugo")
+    user3 = test_login("diuk")
+    user4 = test_login("isacco")
+    user5 = test_login("bombolino")
 
-    test_getConversations()
+    test_getConversations(user1)
+    test_getConversations(user2)
+    test_getConversations(user3)
+    test_getConversations(user4)
+    test_getConversations(user5)
