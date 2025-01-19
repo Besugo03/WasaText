@@ -155,7 +155,7 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 		specifiedConversationID := req.ConversationID
 
 		// Check if the conversation exists
-		_, _, _, _, err = rt.db.GetConversationInfo(specifiedConversationID)
+		_, _, _, _, err = rt.db.GetConversationInfo(specifiedConversationID, token)
 		if err != nil {
 			// it might be that the conversation is not visible in the request.
 			// this might happen if it's a message-specific or comment-specific request.
@@ -169,8 +169,9 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 				http.Error(w, "Invalid request payload. Did you check if the conversation exists, or if the user is part of it?", http.StatusBadRequest)
 				return
 			}
+
 			// get the conversation_id from the message_id
-			conversationID, _, _, _, err := rt.db.GetMessageInfo(req.MessageID)
+			conversationID, _, _, _, _, _, err := rt.db.GetMessageInfo(req.MessageID, token)
 			if conversationID == "" {
 				// if we STILL didnt get any info on what the conversation is, it's probably a comment request.
 				type commentRequest struct {
@@ -188,7 +189,7 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 					http.Error(w, "Comment not found", http.StatusNotFound)
 					return
 				}
-				conversationID, _, _, _, err = rt.db.GetMessageInfo(messageID)
+				conversationID, _, _, _, _, _, err = rt.db.GetMessageInfo(messageID, token)
 				rt.baseLogger.Infoln("Conversation ID from message ID " + messageID + " is " + conversationID)
 
 				if err != nil {

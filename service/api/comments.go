@@ -37,7 +37,7 @@ func (rt *_router) AddComment(w http.ResponseWriter, r *http.Request, _ httprout
 	}
 
 	rt.baseLogger.Infof("Comment added to message %v", comment.MessageID)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // get all comments for a message
@@ -136,16 +136,23 @@ func (rt *_router) GetCommentInfo(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
+	sender_username, err := rt.db.GetUserName(senderID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error getting the sender's username")
+		http.Error(w, "Failed to get the sender's username", http.StatusInternalServerError)
+		return
+	}
+
 	// create the response
 	type commentResponse struct {
 		MessageID string `json:"message_id"`
-		SenderID  string `json:"sender_id"`
+		Sender    string `json:"sender_id"`
 		Content   string `json:"content"`
 		Timestamp string `json:"timestamp"`
 	}
 	resp := commentResponse{
 		MessageID: messageID,
-		SenderID:  senderID,
+		Sender:    sender_username,
 		Content:   content,
 		Timestamp: timestamp,
 	}

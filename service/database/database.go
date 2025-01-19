@@ -51,7 +51,7 @@ type AppDatabase interface {
 	CreateConversation(isGroup bool, name string, picture string) (string, error)
 	UpdateConversation(conversationID string, isGroup bool, name string, picture string) error
 	DeleteConversation(conversationID string) error
-	GetConversationInfo(conversationID string) (string, bool, string, string, error)
+	GetConversationInfo(conversationID string, userID string) (string, bool, string, string, error)
 	GetUserConversations(userID string) ([]string, error)
 
 	AddParticipant(conversationID string, userID string) error
@@ -60,8 +60,9 @@ type AppDatabase interface {
 
 	SendMessage(conversationID string, senderID string, content string, isForwarded bool) (string, error)
 	GetMessages(conversationID string) (messageIDs []string, conversationIDs []string, senderIDs []string, contents []string, timestmaps []string, err error)
+	GetLastMessage(conversationID string) (string, string, string, string, error)
 	DeleteMessage(messageID string) error
-	GetMessageInfo(messageID string) (string, string, string, string, error)
+	GetMessageInfo(messageID string, userID string) (string, string, string, string, string, bool, error)
 
 	CheckCommentsTable() error
 	AddComment(messageID string, senderID string, content string) error

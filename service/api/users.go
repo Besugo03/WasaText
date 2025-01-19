@@ -32,7 +32,7 @@ func (rt *_router) changeUserName(w http.ResponseWriter, r *http.Request, _ http
 	}
 
 	rt.baseLogger.Infof("User %v updated to %v", token, newUsername.Username)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (rt *_router) changeUserPhoto(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -59,5 +59,5 @@ func (rt *_router) changeUserPhoto(w http.ResponseWriter, r *http.Request, _ htt
 	}
 
 	rt.baseLogger.Infof("User %v updated with photo %v", token, newPhoto.Photo)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }

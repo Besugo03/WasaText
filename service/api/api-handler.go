@@ -19,13 +19,14 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/liveness", rt.liveness)
 
 	rt.router.GET("/conversations", rt.authenticate(rt.getUserConversations))
-	rt.router.POST("/conversations/create", rt.authenticate(rt.CreateConversation))
 	// route protette dal membership check per assicurarsi che l'utente faccia parte della conversazione.
 	rt.router.GET("/conversations/info/:conversation_id", rt.authenticate(rt.checkUserInConversation(rt.GetConversationInfo)))
+	rt.router.POST("/conversations/create", rt.authenticate(rt.CreateConversation))
 	rt.router.PUT("/conversations/adduser", rt.authenticate(rt.checkUserInConversation(rt.AddParticipant)))
 	rt.router.DELETE("/conversations/kickuser", rt.authenticate(rt.checkUserInConversation(rt.RemoveParticipant)))
 
 	rt.router.POST("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.SendMessage)))
+	rt.router.GET("/conversations/message/info", rt.authenticate(rt.checkUserInConversation(rt.GetMessageInfo)))
 	rt.router.POST("/conversations/message/forward", rt.authenticate(rt.checkUserInConversation((rt.ForwardMessage))))
 	rt.router.DELETE("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.DeleteMessage)))
 	rt.router.PUT("/conversations/photo", rt.authenticate(rt.checkUserInConversation(rt.UpdateConversationPhoto)))

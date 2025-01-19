@@ -12,6 +12,8 @@ func (rt *_router) getUserConversations(w http.ResponseWriter, r *http.Request, 
 	userID := r.Header.Get("Authorization")
 	userID = userID[7:] // strip the "Bearer " prefix
 
+	rt.baseLogger.Infoln("Getting conversations for user", userID)
+
 	// Retrieve conversations for the user (this is just a placeholder, replace with actual logic)
 	// conversations := []string{"Conversation 1", "Conversation 2"}
 	conversations, err := rt.db.GetUserConversations(userID)
@@ -33,11 +35,58 @@ func (rt *_router) getUserConversations(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// function to get the info of a message
+func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	rt.baseLogger.Infof("Getting message info for message %v", ps.ByName("message_id"))
+	userID := r.Header.Get("Authorization")
+	userID = userID[7:] // strip the "Bearer " prefix
+
+	// messageID is passed in the request body
+	type getMessageInfoRequest struct {
+		MessageID string `json:"message_id"`
+	}
+
+	var req getMessageInfoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	messageID := req.MessageID
+
+	messageID, conversationID, senderID, content, timestamp, is_forwarded, err := rt.db.GetMessageInfo(messageID, userID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", messageID)
+		http.Error(w, "Failed to get message info", http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]interface{}{
+		"message_id":      messageID,
+		"conversation_id": conversationID,
+		"sender_id":       senderID,
+		"content":         content,
+		"timestamp":       timestamp,
+		"is_forwarded":    is_forwarded,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
+}
+
 func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	rt.baseLogger.Infof("Getting conversation info for conversation %v", ps.ByName("conversation_id"))
 	fmt.Println("Getting conversation info for conversation", ps.ByName("conversation_id"))
 	conversationID := ps.ByName("conversation_id")
-	conversationID, isGroup, name, picture, err := rt.db.GetConversationInfo(conversationID)
+
+	// get the user ID from the Authorization header
+	userID := r.Header.Get("Authorization")
+	userID = userID[7:] // strip the "Bearer " prefix
+
+	conversationID, isGroup, name, picture, err := rt.db.GetConversationInfo(conversationID, userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting conversation info for conversation %v", conversationID)
 		http.Error(w, "Failed to get conversation info", http.StatusInternalServerError)
@@ -45,9 +94,27 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 	}
 
 	participants, err := rt.db.GetParticipants(conversationID)
+
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting participants for conversation %v", conversationID)
 		http.Error(w, "Failed to get participants", http.StatusInternalServerError)
+		return
+	}
+
+	// also, get all the messages in the conversation
+	messageIDs, _, _, _, _, err := rt.db.GetMessages(conversationID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting messages for conversation %v", conversationID)
+		http.Error(w, "Failed to get messages", http.StatusInternalServerError)
+		return
+	}
+
+	// also, get the details of the last message for the preview
+	content, lastMessageID, senderID, timestamp, err := rt.db.GetLastMessage(conversationID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting last message for conversation %v", conversationID)
+		http.Error(w, "Failed to get last message", http.StatusInternalServerError)
+
 		return
 	}
 
@@ -56,7 +123,14 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 		"is_group":        isGroup,
 		"name":            name,
 		"picture":         picture,
+		"messages":        messageIDs,
 		"participants":    participants,
+		"last_message": map[string]interface{}{
+			"content":    content,
+			"message_id": lastMessageID,
+			"sender_id":  senderID,
+			"timestamp":  timestamp,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -86,7 +160,7 @@ func (rt *_router) SendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 	userID = userID[7:] // strip the "Bearer " prefix
 
 	// first, we must check if the conversation exists
-	_, _, _, _, err := rt.db.GetConversationInfo(req.ConversationID)
+	_, _, _, _, err := rt.db.GetConversationInfo(req.ConversationID, userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting conversation info for conversation %v", req.ConversationID)
 		http.Error(w, "Conversation does not exist", http.StatusNotFound)
@@ -257,6 +331,10 @@ func (rt *_router) AddParticipant(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
+	// get the requester's user ID from the Authorization header
+	requester_userID := r.Header.Get("Authorization")
+	requester_userID = requester_userID[7:] // strip the "Bearer " prefix
+
 	conversationID := req.ConversationID
 
 	userID, err := rt.db.GetUserID(req.Username)
@@ -267,7 +345,7 @@ func (rt *_router) AddParticipant(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	// first, we must check if the conversation exists
-	_, _, _, _, err = rt.db.GetConversationInfo(conversationID)
+	_, _, _, _, err = rt.db.GetConversationInfo(conversationID, requester_userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting conversation info for conversation %v", conversationID)
 		http.Error(w, "Conversation does not exist", http.StatusNotFound)
@@ -437,8 +515,12 @@ func (rt *_router) DeleteMessage(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	// get the user ID from the Authorization header
+	userID := r.Header.Get("Authorization")
+	userID = userID[7:] // strip the "Bearer " prefix
+
 	// check if the message exists
-	_, _, _, _, err := rt.db.GetMessageInfo(req.MessageID)
+	_, _, _, _, _, _, err := rt.db.GetMessageInfo(req.MessageID, userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", req.MessageID)
 		http.Error(w, "Failed to get message info", http.StatusInternalServerError)

@@ -14,6 +14,7 @@ export default {
 			try {
 				let response = await this.$axios.get("/");
 				this.some_data = response.data;
+				console.log(response.data);
 			} catch (e) {
 				this.errormsg = e.toString();
 			}
@@ -47,7 +48,6 @@ export default {
 				</div>
 			</div>
 		</div>
-
 		<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
 	</div>
 </template>

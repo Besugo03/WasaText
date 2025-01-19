@@ -60,7 +60,7 @@ def test_getConversationInfo(userID, conversationID):
         print("Status Code:", response.status_code)
         print("Response:", response.text)
 
-def test_createConversation(userID):
+def test_createConversation_withDiuk(userID):
     url = f"{BASE_URL}/conversations/create"
     data = {
         "participants": ["diuk"],
@@ -297,6 +297,25 @@ def test_deleteComment(userID, commentID):
         print("Status Code:", response.status_code)
         print("Response:", response.text)
 
+def test_getMessageInfo(userID, messageID):
+    url = f"{BASE_URL}/conversations/message/info"
+    headers = {
+        "Authorization" : "Bearer " + userID,
+    }
+
+    body = {
+        "message_id": messageID,
+    }
+
+    response = requests.get(url, headers=headers, json=body)
+    if response.status_code == 200:
+        print("Get Message Info Test Passed")
+        print("Response:", response.text)
+    else:
+        print("Get Message Info Test Failed")
+        print("Status Code:", response.status_code)
+        print("Response:", response.text)
+
 if __name__ == "__main__":
     # Test "Hello World" endpoint
     test_hello_world()
@@ -309,10 +328,10 @@ if __name__ == "__main__":
     # test_getConversations(user2)
     # test_getConversations(user3)
 
-    # test_createConversation(user1)
+    # test_createConversation_withDiuk(user1)
     # test_getConversationInfo(user1, "1")
 
-    # test_sendMessage(user1, "1", "Hola, soy testuser", False)
+    # test_sendMessage(user1, "1", "message four", False)
     # test_sendMessage(user2, "1", "Hola, soy besugo", False)
 
     # test_removeParticipant(user1, "1", "diuk")
@@ -321,7 +340,11 @@ if __name__ == "__main__":
     # test_addParticipant(user2, "1", "diuk")
     # test_removeParticipant(user2, "1", "diuk")
 
-    # test_getConversationInfo(user1, "1")
+    # test_getConversations(user3) # questo non setta nullo come letto
+    # test_getConversationInfo(user3, "1") # questo setta tutti i messaggi di quella conversazione come ricevuti
+    # test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
+    
+
     # test_forwardMessage(user1, "1", "1") 
     # test_deleteMessage(user1, "1")
 

@@ -1,6 +1,8 @@
 package database
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // this function checks if the tables for conversations exist. if not, it creates them.
 //
@@ -54,6 +56,18 @@ func (db *appdbimpl) CheckConversationsTable() error {
         FOREIGN KEY (conversation_id) REFERENCES conversations_table(conversation_id),
         FOREIGN KEY (sender_id) REFERENCES users_table(user_id)
     )`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.c.Exec(`CREATE TABLE IF NOT EXISTS message_status_table (
+        message_id INTEGER,
+        user_id TEXT,
+        is_received BOOLEAN DEFAULT FALSE,
+        is_read BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (message_id) REFERENCES messages_table(message_id),
+        FOREIGN KEY (user_id) REFERENCES users_table(user_id)
+    )`)
 	return err
 }
 
@@ -98,17 +112,28 @@ func (db *appdbimpl) DeleteConversation(conversationID string) error {
 	return err
 }
 
-func (db *appdbimpl) GetConversationInfo(conversationID string) (string, bool, string, string, error) {
+func (db *appdbimpl) GetConversationInfo(conversationID string, userID string) (string, bool, string, string, error) {
 	db.CheckConversationsTable()
 	var isGroup bool
 	var name string
 	var photo string
 	err := db.c.QueryRow("SELECT is_group, name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&isGroup, &name, &photo)
-	return conversationID, isGroup, name, photo, err
+	if err != nil {
+		return "", false, "", "", err
+	}
+
+	// Mark all messages in the conversation as received by the user
+	_, err = db.c.Exec("UPDATE message_status_table SET is_received = TRUE WHERE message_id IN (SELECT message_id FROM messages_table WHERE conversation_id = ?) AND user_id = ?", conversationID, userID)
+	if err != nil {
+		return "", false, "", "", err
+	}
+
+	return conversationID, isGroup, name, photo, nil
 }
 
 func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
 	db.CheckConversationsTable()
+
 	rows, err := db.c.Query("SELECT conversation_id FROM participants_table WHERE user_id = ?", userID)
 	if err != nil {
 		return nil, err
@@ -124,6 +149,7 @@ func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
 		}
 		conversations = append(conversations, conversationID)
 	}
+
 	return conversations, nil
 }
 
@@ -169,8 +195,34 @@ func (db *appdbimpl) SendMessage(conversationID string, senderID string, content
 	if err != nil {
 		return "", err
 	}
-	id, err := res.LastInsertId()
-	return strconv.FormatInt(id, 10), err
+	messageID, err := res.LastInsertId()
+	if err != nil {
+		return "", err
+	}
+
+	// Get all participants in the conversation
+	participants, err := db.GetParticipants(conversationID)
+	if err != nil {
+		return "", err
+	}
+
+	// Insert entries into message_status_table for each participant
+	for _, userID := range participants {
+		// if the user is the sender, the message is automatically received and read
+		if userID == senderID {
+			_, err = db.c.Exec("INSERT INTO message_status_table (message_id, user_id, is_received, is_read) VALUES (?, ?, TRUE, TRUE)", messageID, userID)
+			if err != nil {
+				return "", err
+			}
+			continue
+		}
+		_, err = db.c.Exec("INSERT INTO message_status_table (message_id, user_id) VALUES (?, ?)", messageID, userID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return strconv.FormatInt(messageID, 10), nil
 }
 
 // get information about the messages in a conversation
@@ -214,14 +266,23 @@ func (db *appdbimpl) DeleteMessage(messageID string) error {
 }
 
 // get information about a message
-func (db *appdbimpl) GetMessageInfo(messageID string) (string, string, string, string, error) {
+func (db *appdbimpl) GetMessageInfo(messageID string, userID string) (string, string, string, string, string, bool, error) {
 	db.CheckConversationsTable()
-	var conversationID string
-	var senderID string
-	var content string
-	var timestamp string
-	err := db.c.QueryRow("SELECT conversation_id, sender_id, content, timestamp FROM messages_table WHERE message_id = ?", messageID).Scan(&conversationID, &senderID, &content, &timestamp)
-	return conversationID, senderID, content, timestamp, err
+
+	var is_forwarded bool
+	var conversationID, senderID, content, timestamp string
+	err := db.c.QueryRow("SELECT conversation_id, sender_id, content, timestamp, is_forwarded FROM messages_table WHERE message_id = ?", messageID).Scan(&conversationID, &senderID, &content, &timestamp, &is_forwarded)
+	if err != nil {
+		return "", "", "", "", "", false, err
+	}
+
+	// Mark the message as read by the user
+	_, err = db.c.Exec("UPDATE message_status_table SET is_read = TRUE WHERE message_id = ? AND user_id = ?", messageID, userID)
+	if err != nil {
+		return "", "", "", "", "", false, err
+	}
+
+	return conversationID, messageID, senderID, content, timestamp, is_forwarded, nil
 }
 
 // get messages from a conversation
@@ -255,4 +316,13 @@ func (db *appdbimpl) GetConversationMessages(conversationID string) ([]string, [
 		timestamps = append(timestamps, timestamp)
 	}
 	return messageIDs, conversationIDs, senderIDs, contents, timestamps, err
+}
+
+// get the last message from a conversation, along with the sender and the timestamp.
+// this is used for the preview of the conversation.
+func (db *appdbimpl) GetLastMessage(conversationID string) (string, string, string, string, error) {
+	db.CheckConversationsTable()
+	var messageID, senderID, timestamp, content string
+	err := db.c.QueryRow("SELECT message_id, sender_id, timestamp, content FROM messages_table WHERE conversation_id = ? ORDER BY timestamp DESC LIMIT 1", conversationID).Scan(&messageID, &senderID, &timestamp, &content)
+	return content, messageID, senderID, timestamp, err
 }

@@ -58,7 +58,7 @@ paths:
               properties:
                 username:
                   type: string
-                  example: Maria
+                  example: Besugo
                   minLength: 3
                   maxLength: 16
       responses:
@@ -92,19 +92,47 @@ paths:
           application/json:
             schema:
               type: object
+              description: the object that contains the new name for a user
               properties:
                 username:
                   type: string
                   example: "NewName"
+                  
+                  minLength: 1
+                  maxLength: 128
       responses:
-        '200':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
+        '204':
           description: Username updated successfully
+
+  /user/photo:
+    put:
+      tags: ["user"]
+      description: Update user profile photo
+      summary: Update user profile photo
+      operationId: setMyPhoto
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: the object that contains the new photo for a user
+              properties:
+                photo:
+                  description: A string with the link to the desired image file.
+                  type: string
+                  minLength: 1
+                  maxLength: 1000000
+      responses:
+        '204':
+          description: Profile photo updated successfully
 
   /conversations:
     get:
@@ -127,22 +155,17 @@ paths:
               schema:
                 type: object
                 properties:
+                  user_id:
+                    type: string
+                    example: "abcdef012345"
                   conversations:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        conversation_id:
-                          type: string
-                        last_message:
-                          type: string
-                        timestamp:
-                          type: string
-                          format: date-time
-                required:
-                  - conversations
+                      type: string
+                      example: "1"
+                    minItems: 0 # 'conversations' can still be empty though
 
-  /conversations/{conversation_id}:
+  /conversations/info/{conversation_id}:
     get:
       tags: ["conversation"]
       description: Retrieve a single conversation
@@ -150,10 +173,11 @@ paths:
       operationId: getConversation
       parameters:
         - name: conversation_id
+          description: ID of the conversation
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/ConversationId'
         - name: Authorization
           description: Authorization token
           in: header
@@ -166,27 +190,46 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - messages  # Explicitly require 'messages' field
-                properties:
-                  conversation_id:
-                    type: string
-                  messages:
-                    type: array
-                    items:
                       type: object
                       properties:
-                        message_id:
-                          $ref: '#/components/schemas/MessageId'
-                        sender:
+                        conversation_id:
                           type: string
-                        content:
+                          example: "1"
+                        is_group:
+                          type: boolean
+                          example: true
+                        name:
                           type: string
-                        timestamp:
+                          example: "Group 1"
+                        picture: 
                           type: string
-                          format: date-time
-                    minItems: 0 # 'messages' can still be empty though
+                          example: "https://wasatext.com/pictures/1"
+                        messages:
+                          type : array # an array of the message ids
+                          items:
+                            type: string
+                            example: "1"
+                        participants:
+                          type: array
+                          items:
+                            type: string
+                            # example with multiple participants
+                            example: "Besugo"
+                        last_message:
+                          type: object
+                          properties:
+                            content:
+                              type: string
+                              example: "Hello!"
+                            message_id:
+                              type: string
+                              example: "1"
+                            sender:
+                              type: string
+                              example: "Besugo"
+                            timestamp:
+                              type: string
+                              example: "2021-01-01T00:00:00Z"
 
   /conversations/create:
     post:
@@ -201,12 +244,22 @@ paths:
             schema:
               type: object
               properties:
+                name:
+                  type: string
+                  example: "Convo 1"
+                  minLength: 3
+                  maxLength: 32
+                picture:
+                  type: string
+                  example: "https://wasatext.com/pictures/1"
+                  minLength: 1
+                  maxLength: 1000000
                 participants:
                   type: array
                   items:
                     type: string
-                    example: "Maria"
-                  minItems: 2
+                    example: "Besugo"
+                  minItems: 1
                   maxItems: 10
       responses:
         '201':
@@ -242,8 +295,13 @@ paths:
               properties:
                 conversation_id:
                   type: string
+                  example: "1"
                 content:
                   type: string
+                  example: "Hello!"
+                is_forwarded:
+                  type: boolean
+                  example: false
       responses:
         '201':
           # description: Message sent successfully
@@ -256,20 +314,86 @@ paths:
                   message_id:
                     $ref: '#/components/schemas/MessageId'
           description: Message sent successfully
+    delete:
+      tags: ["message"]
+      description: Delete a message
+      summary: Delete a message
+      operationId: deleteMessage
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+      responses:
+        '204':
+          description: Message deleted successfully
 
-  /conversations/message/{message_id}/forward:
+  /conversations/message/info:
+    get:
+      tags: ["message"]
+      description: Retrieve a single message's info.
+      summary: Retrieve a single message
+      operationId: getMessage
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+      responses:
+        '200':
+          description: Details of the message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                    example: "1"
+                  conversation_id:
+                    type: string
+                    example: "1"
+                  sender_id:
+                    type: string
+                    example: "Besugo"
+                  content:
+                    type: string
+                    example: "Hello!"
+                  timestamp:
+                    type: string
+                    example: "2021-01-01T00:00:00Z"
+                  is_forwarded:
+                    type: boolean
+                    example: false
+
+  /conversations/message/forward:
     post:
       tags: ["message"]
       description: Forward a message
       summary: Forward a message
       operationId: forwardMessage
-      parameters:
-        - name: message_id
-          description: ID of the message
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/MessageId'
       requestBody:
         required: true
         content:
@@ -278,9 +402,13 @@ paths:
               type: object
               properties:
                 target_conversation_id:
+                  description: The conversation_id of the conversation where the message will be forwarded to.
                   type: string
+                  example: "1"
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
       responses:
-        '200':
+        '201':
         # returns the message_id of the forwarded message
         # (it basically re-sends the message with the flag "isForwarded" set on true)
           content:
@@ -292,7 +420,7 @@ paths:
                     $ref: '#/components/schemas/MessageId'
           description: Message forwarded successfully
 
-  /conversations/message/{message_id}/comment:
+  /conversations/message/comment:
     post:
       tags: ["message"]
       description: Comment on a message
@@ -305,12 +433,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/AuthorizationToken'
-        - name: message_id
-          description: ID of the message
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/MessageId'
       requestBody:
         required: true
         content:
@@ -319,15 +441,17 @@ paths:
               description: the object that contains the new comment for a message
               type: object
               properties:
-                comment:
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+                content:
                   description: A valid comment for a message.
                   maxLength: 1000
                   minLength: 1
-                  pattern: "^.*$" # any string
+                  pattern: "^.*$" # any string. Could also be Emojis. (maybe support for images/gifs?)
                   example: "This is a comment."
                   type: string
       responses:
-        '200':
+        '201':
           content:
             application/json:
               example:
@@ -335,123 +459,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
           description: Comment added successfully
-
-  /conversations/message/{message_id}/uncomment:
     delete:
       tags: ["message"]
       description: Remove comment from a message
       summary: Remove comment from a message
       operationId: uncommentMessage
-      parameters:
-        - name: message_id
-          description: ID of the message
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/MessageId'
-      responses:
-        '200':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-          description: Comment removed successfully
-
-  /conversations/message/{message_id}:
-    delete:
-      tags: ["message"]
-      description: Delete a message
-      summary: Delete a message
-      operationId: deleteMessage
-      parameters:
-        - name: message_id
-          description: ID of the message
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/MessageId'
-      responses:
-        '200':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-          description: Message deleted successfully
-
-  /conversations/{group_id}/adduser:
-    post:
-      tags: ["group"]
-      description: Add a user to a group
-      summary: Add a user to a group
-      operationId: addToGroup
-      parameters:
-        - name: group_id
-          description: ID of the group
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/GroupId'
-      requestBody:
-        required: true
-        content:
-        # it should contain the username of the user we want to add.
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: "Maria"
-                  minLength: 3
-                  maxLength: 16
-      responses:
-        '200':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-          description: User added to group successfully
-
-  /conversations/{group_id}/kickuser:
-    delete:
-      tags: ["group"]
-      description: Kicks a user from a group (yourself by default)
-      summary: Kicks a user from a group (yourself by default)
-      operationId: leaveGroup
-      parameters:
-        - name: group_id
-          description: ID of the group
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/GroupId'
-        - name: username
-          description: name of the user
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/UserId'
-      responses:
-        '200':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-          description: User left the group successfully
-  /user/photo:
-    put:
-      tags: ["user"]
-      description: Update user profile photo
-      summary: Update user profile photo
-      operationId: setMyPhoto
       parameters:
         - name: Authorization
           description: Authorization token
@@ -462,17 +474,175 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+        # a json containing message_id : "abcdef012345"
+          application/json:
             schema:
-              description: the object that contains the new photo for a user
               type: object
               properties:
-                photo:
-                  description: A valid image file as a binary string with a maximum size of 1MB.
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+      responses:
+        '204':
+          description: Comment removed successfully
+    get:
+      tags: ["message"]
+      description: Retrieve a single comment's information.
+      summary: Retrieve a single comment's information.
+      operationId: getComments
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                    example: "abcdef012345"
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message_id:
+                          type: string
+                          example: "1"
+                        content:
+                          type: string
+                          example: "This is a comment."
+                        timestamp:
+                          description: The time the comment was sent.
+                          type: string
+                          example: "2021-01-01T00:00:00Z"
+                        sender:
+                          description: The user who sent the comment.
+                          type: string
+                          example: "Besugo"
+
+  /conversation/message/getcomments:
+    get:
+      tags: ["message"]
+      description: Retrieve all comments from a message
+      summary: Retrieve all comments from a message
+      operationId: getMessageComments
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_id:
+                  $ref: '#/components/schemas/MessageId'
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comment_ids:
+                    type: array
+                    items:
+                      type: string
+                      example: "1234"
+                    minItems: 0
+                  sender_ids:
+                    type: array
+                    items:
+                      type: string
+                      example: "Besugo"
+                    minItems: 0
+                  contents:
+                    type: array
+                    items:
+                      type: string
+                      example: "This is a comment."
+                    minItems: 0
+                  timestamps:
+                    type: array
+                    items:
+                      type: string
+                      example: "2021-01-01T00:00:00Z"
+                    minItems: 0
+
+  /conversations/adduser:
+    post:
+      tags: ["group"]
+      description: Add a user to a group (more generally, to the conversation)
+      summary: Add a user to a group
+      operationId: addToGroup
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
+      requestBody:
+        required: true
+        content:
+        # it should contain the username of the user we want to add.
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id:
+                  $ref: '#/components/schemas/ConversationId'
+                username:
                   type: string
-                  minLength: 1
-                  maxLength: 1000000
-                  format: binary
+                  example: "Besugo"
+                  minLength: 3
+                  maxLength: 32
+      responses:
+        '204':
+          description: User added to group successfully
+
+  /conversations/kickuser:
+    delete:
+      tags: ["group"]
+      description: Kicks a user from a group (yourself by default)
+      summary: Kicks a user from a group (yourself by default)
+      operationId: leaveGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id:
+                  $ref: '#/components/schemas/ConversationId'
+                username:
+                  type: string
+                  example: "Besugo"
+                  minLength: 3
+                  maxLength: 32
       responses:
         '200':
           content:
@@ -481,66 +651,64 @@ paths:
                 message: "OK"
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
-          description: Profile photo updated successfully
+          description: User left the group successfully
 
-  /conversations/{group_id}/photo:
+  /conversations/photo:
     put:
       tags: ["group"]
       description: Update group photo
       summary: Update group photo
       operationId: setGroupPhoto
-      parameters:
-        - name: group_id
-          description: ID of the group
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/GroupId'
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              description: the object that contains the new photo for a group
+              description: the object that contains the new photo for a group, and the group_id
               type: object
               properties:
                 photo:
-                  description: A valid image file as a binary string with a maximum size of 1MB.
+                  description: A valid image link for the group photo.
                   type: string
                   minLength: 1
                   maxLength: 1000000
-                  format: binary
+                conversation_id:
+                  $ref: '#/components/schemas/ConversationId'
       responses:
-        '200':
+        '204':
           description: Group photo updated successfully
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
 
-  /conversations/{group_id}/name:
+  /conversations/name:
     put:
       tags: ["group"]
       description: Update group name
       summary: Update group name
       operationId: setGroupName
       parameters:
-        - name: group_id
-          description: ID of the group
-          in: path
+        - name: Authorization
+          description: Authorization token
+          in: header
           required: true
           schema:
-            $ref: '#/components/schemas/GroupId'
+            $ref: '#/components/schemas/AuthorizationToken'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-                 $ref: '#/components/schemas/ValidName'
+              description: the object that contains the new name for a group and the group_id
+              type: object
+              properties:
+                  conversation_id:
+                    $ref: '#/components/schemas/ConversationId'
+                  name:
+                    type: string
+                    example: "NewName"
+                    minLength: 3
+                    maxLength: 32
+                    pattern: "^[A-Za-z0-9]*$"
       responses:
-        '200':
+        '204':
           content:
             application/json:
               example:
@@ -566,17 +734,17 @@ components:
       minLength: 12
       maxLength: 128
       pattern: "^Bearer [A-Za-z0-9]*$"
-    UserId:
-      description: A valid user id
+    # UserId:
+    #   description: A valid user id
+    #   type: string
+    #   example: "abcdef012345"
+    #   minLength: 12
+    #   maxLength: 128
+    #   pattern: "^[A-Za-z0-9n]*$"
+    ConversationId:
+      description: A valid conversation ID.
       type: string
-      example: "abcdef012345"
-      minLength: 12
-      maxLength: 128
-      pattern: "^[A-Za-z0-9n]*$"
-    GroupId:
-      description: A valid group id
-      type: string
-      example: "creatorUser-group1"
+      example: "123"
       minLength: 3
       maxLength: 128
       pattern: "^[A-Za-z0-9-]*$"
