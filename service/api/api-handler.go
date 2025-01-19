@@ -6,22 +6,37 @@ import (
 
 // Handler returns an instance of httprouter.Router that handle APIs registered here
 func (rt *_router) Handler() http.Handler {
-	// Session Route
+	// Session and user management
 	rt.router.POST("/session", rt.doLogin)
+	rt.router.PUT("/user/name", rt.authenticate(rt.changeUserName))
+	rt.router.PUT("/user/photo", rt.authenticate(rt.changeUserPhoto))
 
 	// Register routes
 	rt.router.GET("/", rt.getHelloWorld)
 	rt.router.GET("/context", rt.wrap(rt.getContextReply))
 	// ? what the fuck does "wrap" even do? why do i need this context reply?
-
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 
-	// test for protected route
-	// quindi, per accedere a un endpoint protetto, é necessario wrapparlo nell'authenticate
-	// (oltre che nel .wrap). Esempi di query presenti nel .py che uso per i test.
 	rt.router.GET("/conversations", rt.authenticate(rt.getUserConversations))
-	rt.router.GET("/conversations/:conversation_id", rt.authenticate(rt.GetConversationInfo))
+	rt.router.POST("/conversations/create", rt.authenticate(rt.CreateConversation))
+	// route protette dal membership check per assicurarsi che l'utente faccia parte della conversazione.
+	rt.router.GET("/conversations/info/:conversation_id", rt.authenticate(rt.checkUserInConversation(rt.GetConversationInfo)))
+	rt.router.PUT("/conversations/adduser", rt.authenticate(rt.checkUserInConversation(rt.AddParticipant)))
+	rt.router.DELETE("/conversations/kickuser", rt.authenticate(rt.checkUserInConversation(rt.RemoveParticipant)))
+
+	rt.router.POST("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.SendMessage)))
+	rt.router.POST("/conversations/message/forward", rt.authenticate(rt.checkUserInConversation((rt.ForwardMessage))))
+	rt.router.DELETE("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.DeleteMessage)))
+	rt.router.PUT("/conversations/photo", rt.authenticate(rt.checkUserInConversation(rt.UpdateConversationPhoto)))
+	rt.router.PUT("/conversations/name", rt.authenticate(rt.checkUserInConversation(rt.UpdateConversationName)))
+
+	// comments
+	// They all include the conversation membership check, since comments are tied to messages, which are tied to conversations.
+	rt.router.POST("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.AddComment)))
+	rt.router.DELETE("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.DeleteComment)))
+	rt.router.GET("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.GetCommentInfo)))
+	rt.router.GET("/conversations/message/getcomments", rt.authenticate(rt.checkUserInConversation(rt.GetComments)))
 
 	return rt.router
 }

@@ -7,42 +7,47 @@ func (db *appdbimpl) CheckUsersTable() error {
 	// the table is called users_table.
 	// you CANNOT have two users with the same username.
 	// you CANNOT have two users with the same user_id.
-	var tableName string
-	err := db.c.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='users_table';`).Scan(&tableName)
-	if err != nil {
-		// if the table doesn't exist, create it.
-		sqlStmt := `CREATE TABLE users_table (username TEXT PRIMARY KEY, user_id TEXT);`
-		_, err = db.c.Exec(sqlStmt)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	// the fields are :
+	// username (TEXT)
+	// user_id (TEXT)
+	// photo (TEXT)
+
+	// if the table doesn't exist, create it.
+	_, err := db.c.Exec(`CREATE TABLE IF NOT EXISTS users_table (
+		username TEXT PRIMARY KEY,
+		user_id TEXT,
+		photo TEXT
+	)`)
+	return err
 }
 
 // this basically inserts a new user into the database.
 // the username is the user's username and the userid is the user's auth token.
-func (db *appdbimpl) SetUser(username, userid string) error {
+func (db *appdbimpl) RegisterUser(username string, userid string, photo string) error {
 	db.CheckUsersTable()
 	// _, err := db.c.Exec("INSERT INTO users_table (username, user_id) VALUES (?, ?)", username, userid)
 	// if we try to insert a user that already exists, the database will return an error.
 	// if we try to insert a userid that already exists, the database will return an error.
 
 	// first, check if the user or userid already exists
+	// if it does, return an error.
+	// if it doesn't, insert the user into the database.
 	var count int
 	err := db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ? OR user_id = ?", username, userid).Scan(&count)
-	if count > 0 {
-		return errors.New("user already exists")
-	}
+
 	if err != nil {
 		return err
 	}
-	// if the user or userid doesn't exist, insert the user into the database.
-	_, err = db.c.Exec("INSERT INTO users_table (username, user_id) VALUES (?, ?)", username, userid)
+
+	if count > 0 {
+		return errors.New("user already exists")
+	}
+	// photo is optional. if it's not provided, it will be set to an empty string.
+	_, err = db.c.Exec("INSERT INTO users_table (username, user_id, photo) VALUES (?, ?, ?)", username, userid, photo)
 	return err
 }
 
-func (db *appdbimpl) GetUser(username string) (string, error) {
+func (db *appdbimpl) GetUserID(username string) (string, error) {
 	db.CheckUsersTable()
 	var userid string
 	// get the userid from the table
@@ -59,4 +64,29 @@ func (db *appdbimpl) GetUserName(userid string) (string, error) {
 	var name string
 	err := db.c.QueryRow("SELECT username FROM users_table WHERE user_id = ?", userid).Scan(&name)
 	return name, err
+}
+
+func (db *appdbimpl) UpdateUser(username string, userid string, photo string) error {
+	db.CheckUsersTable()
+	// if the user doesn't exist, return an error.
+	// if the user exists, update the user.
+	// for each argument that is nil, keep the old value.
+	// first, we get the old values.
+	var oldUsername string
+	var oldPhoto string
+	err := db.c.QueryRow("SELECT username, photo FROM users_table WHERE user_id = ?", userid).Scan(&oldUsername, &oldPhoto)
+	if err != nil {
+		return err
+	}
+	// if the username is nil or "", keep the old value.
+	if username == "" {
+		username = oldUsername
+	}
+	// if the photo is nil or "", keep the old value.
+	if photo == "" {
+		photo = oldPhoto
+	}
+	// update the user in the database.
+	_, err = db.c.Exec("UPDATE users_table SET username = ?, photo = ? WHERE user_id = ?", username, photo, userid)
+	return err
 }

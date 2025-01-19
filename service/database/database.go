@@ -42,12 +42,13 @@ type AppDatabase interface {
 	SetName(name string) error
 
 	CheckUsersTable() error
-	GetUser(username string) (string, error)
+	GetUserID(username string) (string, error)
 	GetUserName(userid string) (string, error)
-	SetUser(username, userid string) error // userid is basically its auth token and identifier.
+	RegisterUser(username string, userid string, photo string) error // userid is basically its auth token and identifier.
+	UpdateUser(username string, userid string, photo string) error   // update the user's photo. Arguments can be nil to keep the old value.
 
 	CheckConversationsTable() error
-	CreateConversation(conversationID string, isGroup bool, name string, picture string) error
+	CreateConversation(isGroup bool, name string, picture string) (string, error)
 	UpdateConversation(conversationID string, isGroup bool, name string, picture string) error
 	DeleteConversation(conversationID string) error
 	GetConversationInfo(conversationID string) (string, bool, string, string, error)
@@ -56,6 +57,17 @@ type AppDatabase interface {
 	AddParticipant(conversationID string, userID string) error
 	RemoveParticipant(conversationID string, userID string) error
 	GetParticipants(conversationID string) ([]string, error)
+
+	SendMessage(conversationID string, senderID string, content string, isForwarded bool) (string, error)
+	GetMessages(conversationID string) (messageIDs []string, conversationIDs []string, senderIDs []string, contents []string, timestmaps []string, err error)
+	DeleteMessage(messageID string) error
+	GetMessageInfo(messageID string) (string, string, string, string, error)
+
+	CheckCommentsTable() error
+	AddComment(messageID string, senderID string, content string) error
+	GetComments(messageID string) (commentIDs []string, messageIDs []string, senderIDs []string, contents []string, timestamps []string, err error)
+	DeleteComment(commentID string) error
+	GetCommentInfo(commentID string) (string, string, string, string, error)
 
 	Ping() error
 }

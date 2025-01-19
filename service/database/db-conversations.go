@@ -1,5 +1,7 @@
 package database
 
+import "strconv"
+
 // this function checks if the tables for conversations exist. if not, it creates them.
 //
 // This includes :
@@ -8,12 +10,11 @@ package database
 // conversation_id (primary key, INTEGER or UUID)
 // is_group (BOOLEAN)
 // name (TEXT)
-// picture (TEXT)
+// photo (TEXT)
 //
 // participants_table:
-// participant_id (primary key, INTEGER or UUID)
+// participant_id (the user_id of the participant to the conversation) (primary key, INTEGER or UUID)
 // conversation_id (foreign key, INTEGER or UUID)
-// user_id (foreign key, INTEGER or UUID)
 //
 // messages_table:
 // message_id (primary key, INTEGER or UUID)
@@ -23,53 +24,71 @@ package database
 // is_forwarded (BOOLEAN)
 // timestamp (DATETIME or INTEGER for Unix timestamp)
 func (db *appdbimpl) CheckConversationsTable() error {
-	// first, check if the conversations_table exists
-	var tableName string
-	err := db.c.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='conversations_table';`).Scan(&tableName)
+	_, err := db.c.Exec(`CREATE TABLE IF NOT EXISTS conversations_table (
+        conversation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        is_group BOOLEAN,
+        name TEXT,
+        photo TEXT
+    )`)
 	if err != nil {
-		// if the table doesn't exist, create it.
-		sqlStmt := `CREATE TABLE conversations_table (conversation_id TEXT PRIMARY KEY, is_group BOOLEAN, name TEXT, picture TEXT);`
-		_, err = db.c.Exec(sqlStmt)
-		if err != nil {
-			return err
-		}
+		return err
 	}
-	// next, check if the participants_table exists
-	err = db.c.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='participants_table';`).Scan(&tableName)
-	if err != nil {
-		// if the table doesn't exist, create it.
-		sqlStmt := `CREATE TABLE participants_table (participant_id TEXT PRIMARY KEY, conversation_id TEXT, user_id TEXT);`
-		_, err = db.c.Exec(sqlStmt)
-		if err != nil {
-			return err
-		}
-	}
-	// finally, check if the messages_table exists
-	err = db.c.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='messages_table';`).Scan(&tableName)
-	if err != nil {
-		// if the table doesn't exist, create it.
-		sqlStmt := `CREATE TABLE messages_table (message_id TEXT PRIMARY KEY, conversation_id TEXT, sender_id TEXT, content TEXT, is_forwarded BOOLEAN, timestamp INTEGER);`
-		_, err = db.c.Exec(sqlStmt)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
-func (db *appdbimpl) CreateConversation(conversationID string, isGroup bool, name string, picture string) error {
-	db.CheckConversationsTable()
-	// if some of the values are nil, they will be set to their default values.
-	_, err := db.c.Exec("INSERT INTO conversations_table (conversation_id, is_group, name, picture) VALUES (?, ?, ?, ?)", conversationID, isGroup, name, picture)
+	_, err = db.c.Exec(`CREATE TABLE IF NOT EXISTS participants_table (
+		conversation_id INTEGER,
+		user_id TEXT,
+		FOREIGN KEY (conversation_id) REFERENCES conversations_table(conversation_id),
+		FOREIGN KEY (user_id) REFERENCES users_table(user_id)
+	)`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.c.Exec(`CREATE TABLE IF NOT EXISTS messages_table (
+        message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER,
+        sender_id TEXT,
+        content TEXT,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+		is_forwarded BOOLEAN,
+        FOREIGN KEY (conversation_id) REFERENCES conversations_table(conversation_id),
+        FOREIGN KEY (sender_id) REFERENCES users_table(user_id)
+    )`)
 	return err
 }
 
-// this function updates the conversation with the given conversationID.
-// the name and picture are updated to the given values.
-func (db *appdbimpl) UpdateConversation(conversationID string, isGroup bool, name string, picture string) error {
+// returns the newly created conversation's conversation_id.
+func (db *appdbimpl) CreateConversation(isGroup bool, name string, photo string) (string, error) {
 	db.CheckConversationsTable()
-	// if the function is given nil for some of the values, it will keep the old values.
-	_, err := db.c.Exec("UPDATE conversations_table SET is_group = COALESCE(?, is_group), name = COALESCE(?, name), picture = COALESCE(?, picture) WHERE conversation_id = ?", isGroup, name, picture, conversationID)
+	// if some of the values are nil, they will be set to their default values.
+	res, err := db.c.Exec("INSERT INTO conversations_table (is_group, name, photo) VALUES (?, ?, ?)", isGroup, name, photo)
+	if err != nil {
+		return "", err
+	}
+	id, err := res.LastInsertId()
+	return strconv.FormatInt(id, 10), err
+}
+
+// this function updates the conversation with the given conversationID.
+// the name and photo are updated to the given values.
+func (db *appdbimpl) UpdateConversation(conversationID string, isGroup bool, name string, photo string) error {
+	db.CheckConversationsTable()
+	// Get the current values
+	var currentName, currentPhoto string
+	err := db.c.QueryRow("SELECT name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&currentName, &currentPhoto)
+	if err != nil {
+		return err
+	}
+
+	// Use the current values if the input is empty
+	if name == "" {
+		name = currentName
+	}
+	if photo == "" {
+		photo = currentPhoto
+	}
+
+	_, err = db.c.Exec("UPDATE conversations_table SET is_group = ?, name = ?, photo = ? WHERE conversation_id = ?", isGroup, name, photo, conversationID)
 	return err
 }
 
@@ -83,9 +102,9 @@ func (db *appdbimpl) GetConversationInfo(conversationID string) (string, bool, s
 	db.CheckConversationsTable()
 	var isGroup bool
 	var name string
-	var picture string
-	err := db.c.QueryRow("SELECT is_group, name, picture FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&isGroup, &name, &picture)
-	return conversationID, isGroup, name, picture, err
+	var photo string
+	err := db.c.QueryRow("SELECT is_group, name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&isGroup, &name, &photo)
+	return conversationID, isGroup, name, photo, err
 }
 
 func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
@@ -111,7 +130,7 @@ func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
 // add participant to conversation
 func (db *appdbimpl) AddParticipant(conversationID string, userID string) error {
 	db.CheckConversationsTable()
-	_, err := db.c.Exec("INSERT INTO participants_table (participant_id, conversation_id, user_id) VALUES (?, ?, ?)", conversationID+userID, conversationID, userID)
+	_, err := db.c.Exec("INSERT INTO participants_table (conversation_id, user_id) VALUES (?, ?)", conversationID, userID)
 	return err
 }
 
@@ -141,4 +160,99 @@ func (db *appdbimpl) GetParticipants(conversationID string) ([]string, error) {
 		participants = append(participants, userID)
 	}
 	return participants, nil
+}
+
+// sends a message to a conversation. Returns the message_id of the newly created message.
+func (db *appdbimpl) SendMessage(conversationID string, senderID string, content string, is_forwarded bool) (string, error) {
+	db.CheckConversationsTable()
+	res, err := db.c.Exec("INSERT INTO messages_table (conversation_id, sender_id, content, is_forwarded) VALUES (?, ?, ?, ?)", conversationID, senderID, content, is_forwarded)
+	if err != nil {
+		return "", err
+	}
+	id, err := res.LastInsertId()
+	return strconv.FormatInt(id, 10), err
+}
+
+// get information about the messages in a conversation
+func (db *appdbimpl) GetMessages(conversationID string) ([]string, []string, []string, []string, []string, error) {
+	db.CheckConversationsTable()
+	rows, err := db.c.Query("SELECT message_id, conversation_id, sender_id, content, timestamp FROM messages_table WHERE conversation_id = ?", conversationID)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	defer rows.Close()
+
+	var messageIDs []string
+	var conversationIDs []string
+	var senderIDs []string
+	var contents []string
+	var timestamps []string
+	for rows.Next() {
+		var messageID string
+		var conversationID string
+		var senderID string
+		var content string
+		var timestamp string
+		err = rows.Scan(&messageID, &conversationID, &senderID, &content, &timestamp)
+		if err != nil {
+			return nil, nil, nil, nil, nil, err
+		}
+		messageIDs = append(messageIDs, messageID)
+		conversationIDs = append(conversationIDs, conversationID)
+		senderIDs = append(senderIDs, senderID)
+		contents = append(contents, content)
+		timestamps = append(timestamps, timestamp)
+	}
+	return messageIDs, conversationIDs, senderIDs, contents, timestamps, err
+}
+
+// delete a message from a conversation
+func (db *appdbimpl) DeleteMessage(messageID string) error {
+	db.CheckConversationsTable()
+	_, err := db.c.Exec("DELETE FROM messages_table WHERE message_id = ?", messageID)
+	return err
+}
+
+// get information about a message
+func (db *appdbimpl) GetMessageInfo(messageID string) (string, string, string, string, error) {
+	db.CheckConversationsTable()
+	var conversationID string
+	var senderID string
+	var content string
+	var timestamp string
+	err := db.c.QueryRow("SELECT conversation_id, sender_id, content, timestamp FROM messages_table WHERE message_id = ?", messageID).Scan(&conversationID, &senderID, &content, &timestamp)
+	return conversationID, senderID, content, timestamp, err
+}
+
+// get messages from a conversation
+func (db *appdbimpl) GetConversationMessages(conversationID string) ([]string, []string, []string, []string, []string, error) {
+	db.CheckConversationsTable()
+	rows, err := db.c.Query("SELECT message_id, conversation_id, sender_id, content, timestamp FROM messages_table WHERE conversation_id = ?", conversationID)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	defer rows.Close()
+
+	var messageIDs []string
+	var conversationIDs []string
+	var senderIDs []string
+	var contents []string
+	var timestamps []string
+	for rows.Next() {
+		var messageID string
+		var conversationID string
+		var senderID string
+		var content string
+		var timestamp string
+		err = rows.Scan(&messageID, &conversationID, &senderID, &content, &timestamp)
+		if err != nil {
+			return nil, nil, nil, nil, nil, err
+		}
+		messageIDs = append(messageIDs, messageID)
+		conversationIDs = append(conversationIDs, conversationID)
+		senderIDs = append(senderIDs, senderID)
+		contents = append(contents, content)
+		timestamps = append(timestamps, timestamp)
+	}
+	return messageIDs, conversationIDs, senderIDs, contents, timestamps, err
 }
