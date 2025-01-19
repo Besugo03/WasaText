@@ -8,7 +8,7 @@ import (
 func (rt *_router) Handler() http.Handler {
 	// Session and user management
 	rt.router.POST("/session", rt.doLogin)
-	rt.router.PUT("/user/name", rt.authenticate(rt.changeUserName))
+	rt.router.PUT("/user/username", rt.authenticate(rt.changeUserName))
 	rt.router.PUT("/user/photo", rt.authenticate(rt.changeUserPhoto))
 
 	// Register routes

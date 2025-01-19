@@ -80,12 +80,12 @@ paths:
       summary: Update user’s name
       operationId: setMyUserName
       parameters:
-        - name: user_id
-          description: ID of the user
+        - name: Authorization
+          description: Authorization token
           in: header
           required: true
           schema:
-            $ref: '#/components/schemas/UserId'
+            $ref: '#/components/schemas/AuthorizationToken'
       requestBody:
         required: true
         content:
@@ -93,7 +93,7 @@ paths:
             schema:
               type: object
               properties:
-                new_name:
+                username:
                   type: string
                   example: "NewName"
       responses:
@@ -113,12 +113,12 @@ paths:
       summary: Retrieve user's conversations
       operationId: getMyConversations
       parameters:
-        - name: user_id
-          description: ID of the user
+        - name: Authorization
+          description: Authorization token
           in: header
           required: true
           schema:
-            $ref: '#/components/schemas/UserId'
+            $ref: '#/components/schemas/AuthorizationToken'
       responses:
         '200':
           description: List of conversations
@@ -154,6 +154,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
       responses:
         '200':
           description: Details of the conversation
@@ -217,6 +223,13 @@ paths:
   /conversations/message:
     post:
       tags: ["message"]
+      parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
       description: Send a new message
       summary: Send a new message
       operationId: sendMessage
@@ -286,6 +299,12 @@ paths:
       summary: Comment on a message
       operationId: commentMessage
       parameters:
+        - name: Authorization
+          description: Authorization token
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthorizationToken'
         - name: message_id
           description: ID of the message
           in: path
@@ -434,12 +453,12 @@ paths:
       summary: Update user profile photo
       operationId: setMyPhoto
       parameters:
-        - name: user_id
-          description: ID of the user
+        - name: Authorization
+          description: Authorization token
           in: header
           required: true
           schema:
-            $ref: '#/components/schemas/UserId'
+            $ref: '#/components/schemas/AuthorizationToken'
       requestBody:
         required: true
         content:
@@ -540,6 +559,13 @@ components:
       minLength: 12
       maxLength: 128
       pattern: "^[A-Za-z0-9n]*$"
+    AuthorizationToken:
+      description: A valid Authorization token. "Bearer " + user_id
+      type: string
+      example: "Bearer abcdef012345"
+      minLength: 12
+      maxLength: 128
+      pattern: "^Bearer [A-Za-z0-9]*$"
     UserId:
       description: A valid user id
       type: string

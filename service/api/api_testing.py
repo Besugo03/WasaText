@@ -279,6 +279,24 @@ def test_getCommentInfo(userID, commentID):
         print("Status Code:", response.status_code)
         print("Response:", response.text)
 
+def test_deleteComment(userID, commentID):
+    url = f"{BASE_URL}/conversations/message/comment"
+    data = {
+        "comment_id": commentID,
+    }
+    headers = {
+        "Authorization" : "Bearer " + userID,
+    }
+
+    response = requests.delete(url, json=data, headers=headers)
+    if response.status_code == 200 or response.status_code == 201:
+        print("Delete Comment Test Passed")
+        print("Response:", response.text)
+    else:
+        print("Delete Comment Test Failed")
+        print("Status Code:", response.status_code)
+        print("Response:", response.text)
+
 if __name__ == "__main__":
     # Test "Hello World" endpoint
     test_hello_world()
@@ -314,4 +332,5 @@ if __name__ == "__main__":
     # test_changeGroupName(user1, "1", "RRRrrrrepiteLoQueDicess")
 
     # test_addCommentToMessage(user1, "1", "comment to first message")
-    test_getCommentInfo(user1, "1")
+    # test_getCommentInfo(user1, "1")
+    # test_deleteComment(user1, "1")
