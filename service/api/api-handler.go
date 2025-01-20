@@ -23,7 +23,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations/info/:conversation_id", rt.authenticate(rt.checkUserInConversation(rt.GetConversationInfo)))
 	rt.router.POST("/conversations/create", rt.authenticate(rt.CreateConversation))
 	rt.router.PUT("/conversations/adduser", rt.authenticate(rt.checkUserInConversation(rt.AddParticipant)))
-	rt.router.DELETE("/conversations/kickuser", rt.authenticate(rt.checkUserInConversation(rt.RemoveParticipant)))
+	rt.router.PUT("/conversations/kickuser", rt.authenticate(rt.checkUserInConversation(rt.RemoveParticipant)))
 
 	rt.router.POST("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.SendMessage)))
 	rt.router.GET("/conversations/message/info", rt.authenticate(rt.checkUserInConversation(rt.GetMessageInfo)))

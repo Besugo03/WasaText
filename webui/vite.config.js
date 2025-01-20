@@ -17,7 +17,7 @@ export default defineConfig(({command, mode, ssrBuild}) => {
 		// TODO se al prof non va bene che ci sia, levarlo.
 		server: {
 			watch: {
-			  usePolling: false, // Use polling if file changes are not detected
+			  usePolling: true, // Use polling if file changes are not detected
 			},
 			hmr: {
 			  overlay: true, // Enable HMR overlay for errors

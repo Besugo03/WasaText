@@ -146,7 +146,7 @@ func (rt *_router) GetCommentInfo(w http.ResponseWriter, r *http.Request, ps htt
 	// create the response
 	type commentResponse struct {
 		MessageID string `json:"message_id"`
-		Sender    string `json:"sender_id"`
+		Sender    string `json:"sender"`
 		Content   string `json:"content"`
 		Timestamp string `json:"timestamp"`
 	}

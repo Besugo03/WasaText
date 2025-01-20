@@ -24,7 +24,6 @@ func (rt *_router) getUserConversations(w http.ResponseWriter, r *http.Request, 
 	}
 
 	resp := map[string]interface{}{
-		"user_id":       userID,
 		"conversations": conversations,
 	}
 
@@ -61,10 +60,18 @@ func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
+	// get the sender's username
+	senderUsername, err := rt.db.GetUserName(senderID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting username for user %v", senderID)
+		http.Error(w, "Failed to get username", http.StatusInternalServerError)
+		return
+	}
+
 	resp := map[string]interface{}{
 		"message_id":      messageID,
 		"conversation_id": conversationID,
-		"sender_id":       senderID,
+		"sender":          senderUsername,
 		"content":         content,
 		"timestamp":       timestamp,
 		"is_forwarded":    is_forwarded,
