@@ -90,3 +90,34 @@ func (db *appdbimpl) UpdateUser(username string, userid string, photo string) er
 	_, err = db.c.Exec("UPDATE users_table SET username = ?, photo = ? WHERE user_id = ?", username, photo, userid)
 	return err
 }
+
+// get all users
+func (db *appdbimpl) GetAllUsers() ([]string, error) {
+	db.CheckUsersTable()
+	rows, err := db.c.Query("SELECT username FROM users_table")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var users []string
+	for rows.Next() {
+		var username string
+		err := rows.Scan(&username)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, username)
+	}
+	return users, nil
+}
+
+// check if a user exists
+func (db *appdbimpl) CheckUserExistence(username string) (bool, error) {
+	db.CheckUsersTable()
+	var count int
+	err := db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ?", username).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

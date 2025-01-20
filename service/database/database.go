@@ -46,6 +46,8 @@ type AppDatabase interface {
 	GetUserName(userid string) (string, error)
 	RegisterUser(username string, userid string, photo string) error // userid is basically its auth token and identifier.
 	UpdateUser(username string, userid string, photo string) error   // update the user's photo. Arguments can be nil to keep the old value.
+	GetAllUsers() ([]string, error)
+	CheckUserExistence(userid string) (bool, error)
 
 	CheckConversationsTable() error
 	CreateConversation(isGroup bool, name string, picture string) (string, error)

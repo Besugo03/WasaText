@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -190,6 +191,11 @@ func (db *appdbimpl) GetParticipants(conversationID string) ([]string, error) {
 
 // sends a message to a conversation. Returns the message_id of the newly created message.
 func (db *appdbimpl) SendMessage(conversationID string, senderID string, content string, is_forwarded bool) (string, error) {
+	fmt.Println("SendMessage called with the following parameters:")
+	fmt.Println("conversationID:", conversationID)
+	fmt.Println("senderID:", senderID)
+	fmt.Println("content:", content)
+	fmt.Println("is_forwarded:", is_forwarded)
 	db.CheckConversationsTable()
 	res, err := db.c.Exec("INSERT INTO messages_table (conversation_id, sender_id, content, is_forwarded) VALUES (?, ?, ?, ?)", conversationID, senderID, content, is_forwarded)
 	if err != nil {

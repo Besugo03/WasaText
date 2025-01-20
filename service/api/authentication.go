@@ -112,6 +112,8 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 		token = strings.TrimPrefix(token, "Bearer ")
 		rt.baseLogger.Infof("Received token : %v", token)
 
+		var SpecifiedConversationID string
+
 		// Check if the token is present
 		if token == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -138,82 +140,107 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 		// Reset the request body so it can be read again
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		// Check the JSON payload for the conversation_id
-		type sendMessageRequest struct {
-			ConversationID string `json:"conversation_id"`
+		// Now, we can proceed.
+
+		// the request can have one of the six :
+		// 1. conversation_id in the body or in the URL
+		// 2. message_id in the body or in the URL
+		// 3. comment_id in the body or in the URL
+
+		// First, we check for the conversation_id case :
+
+		// Check if the conversation_id is in the URL
+		SpecifiedConversationID = ps.ByName("conversationId")
+		if SpecifiedConversationID == "" {
+			rt.baseLogger.Infoln("No conversation_id in the URL. Checking the request body...")
+			// Check if the conversation_id is in the request body
+			var ConversationBody struct {
+				ConversationID string `json:"conversationId"`
+			}
+			err = json.NewDecoder(r.Body).Decode(&ConversationBody)
+			if err != nil {
+				rt.baseLogger.Infoln("No conversation_id in the request body. proceeding with message_id check...")
+			} else {
+				SpecifiedConversationID = ConversationBody.ConversationID
+			}
+			// Reset the request body so it can be read again
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
-		var req sendMessageRequest
-		if err := json.NewDecoder(bytes.NewBuffer(bodyBytes)).Decode(&req); err != nil {
-			// the requestID may be passed as a URL parameter, so try to read it from there
-			req.ConversationID = ps.ByName("conversation_id")
-			if req.ConversationID == "" {
-				http.Error(w, "Invalid request payload", http.StatusBadRequest)
-				return
+
+		// if the conversation_id is still empty, we proceed with the message_id check.
+		if SpecifiedConversationID == "" {
+			messageID := ps.ByName("messageId")
+			if messageID == "" {
+				// if the message_id is still empty, we check if the message_id is in the request body.
+				rt.baseLogger.Infoln("No message_id in the URL. Checking the request body...")
+				var MessageBody struct {
+					MessageID string `json:"messageId"`
+				}
+				err = json.NewDecoder(r.Body).Decode(&MessageBody)
+				if err != nil {
+					rt.baseLogger.Infoln("No message_id in the request body either... proceeding with comment_id check...")
+				} else {
+					messageID = MessageBody.MessageID
+				}
+				// Reset the request body so it can be read again
+				r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+			}
+			if messageID != "" {
+				// if the message_id is not empty, we get the conversation_id from the message_id.
+				// we will use rt.db.GetMessageInfo(messageID, token)
+				// this will return the conversation_id, sender_id, content, timestamp, and the message_id.
+				// we only need the conversation_id.
+				SpecifiedConversationID, _, _, _, _, _, err = rt.db.GetMessageInfo(messageID, token)
+				if err != nil {
+					http.Error(w, "Failed to get message info", http.StatusInternalServerError)
+					return
+				}
+			}
+			// if the message_id is still empty, we proceed with the comment_id check.
+		}
+
+		if SpecifiedConversationID == "" {
+			commentID := ps.ByName("commentId")
+			if commentID == "" {
+				rt.baseLogger.Infoln("No comment_id in the URL. Checking the request body...")
+				// if the comment_id is still empty, we check if the comment_id is in the request body.
+				var CommentBody struct {
+					CommentID string `json:"commentId"`
+				}
+				err = json.NewDecoder(r.Body).Decode(&CommentBody)
+				if err != nil {
+					rt.baseLogger.Infoln("No comment_id in the request body either...")
+				} else {
+					commentID = CommentBody.CommentID
+				}
+				// Reset the request body so it can be read again
+				r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+			}
+			if commentID != "" {
+				var CommentMessageID string
+				CommentMessageID, _, _, _, err = rt.db.GetCommentInfo(commentID)
+				if err != nil {
+					http.Error(w, "Failed to get comment info", http.StatusInternalServerError)
+					return
+				}
+				SpecifiedConversationID, _, _, _, _, _, err = rt.db.GetMessageInfo(CommentMessageID, token)
+				if err != nil {
+					http.Error(w, "Failed to get message info", http.StatusInternalServerError)
+					return
+
+				}
 			}
 		}
 
-		specifiedConversationID := req.ConversationID
-
-		// Check if the conversation exists
-		_, _, _, _, err = rt.db.GetConversationInfo(specifiedConversationID, token)
-		if err != nil {
-			// it might be that the conversation is not visible in the request.
-			// this might happen if it's a message-specific or comment-specific request.
-
-			// catching the message edgecase
-			type messageRequest struct {
-				MessageID string `json:"message_id"`
-			}
-			var req messageRequest
-			if err := json.NewDecoder(bytes.NewBuffer(bodyBytes)).Decode(&req); err != nil {
-				http.Error(w, "Invalid request payload. Did you check if the conversation exists, or if the user is part of it?", http.StatusBadRequest)
-				return
-			}
-
-			// get the conversation_id from the message_id
-			conversationID, _, _, _, _, _, err := rt.db.GetMessageInfo(req.MessageID, token)
-			if conversationID == "" {
-				// if we STILL didnt get any info on what the conversation is, it's probably a comment request.
-				type commentRequest struct {
-					CommentID string `json:"comment_id"`
-				}
-				var req commentRequest
-				if err := json.NewDecoder(bytes.NewBuffer(bodyBytes)).Decode(&req); err != nil {
-					http.Error(w, "Invalid request payload. Did you check if the conversation exists, or if the user is part of it?", http.StatusBadRequest)
-					return
-				}
-				// get the conversation_id from the comment_id
-				messageID, _, _, _, err := rt.db.GetCommentInfo(req.CommentID)
-				if err != nil {
-					rt.baseLogger.WithError(err).Errorf("Error querying the database for comment %v", req.CommentID)
-					http.Error(w, "Comment not found", http.StatusNotFound)
-					return
-				}
-				conversationID, _, _, _, _, _, err = rt.db.GetMessageInfo(messageID, token)
-				rt.baseLogger.Infoln("Conversation ID from message ID " + messageID + " is " + conversationID)
-
-				if err != nil {
-					rt.baseLogger.WithError(err).Errorf("Error querying the database for message %v", messageID)
-					http.Error(w, "Message not found", http.StatusNotFound)
-					return
-				}
-			}
-			if err != nil && conversationID == "" {
-				rt.baseLogger.WithError(err).Errorf("Error querying the database for message %v", req.MessageID)
-				http.Error(w, "Message not found", http.StatusNotFound)
-				return
-			}
-			specifiedConversationID = conversationID
-			rt.baseLogger.Infof("Conversation ID from message ID %v is %v", req.MessageID, conversationID)
-
-			if specifiedConversationID == "" {
-				http.Error(w, "Conversation not found", http.StatusNotFound)
-				return
-			}
+		// if the conversation_id is still empty, we return an error.
+		if SpecifiedConversationID == "" {
+			rt.baseLogger.Infoln("No conversation_id in the request body or URL.")
+			http.Error(w, "No conversation_id could be found from the given request.", http.StatusBadRequest)
+			return
 		}
 
 		// Check if the user is a participant in the conversation
-		participants, err := rt.db.GetParticipants(specifiedConversationID)
+		participants, err := rt.db.GetParticipants(SpecifiedConversationID)
 
 		isParticipant := false
 		for _, participant := range participants {
@@ -228,12 +255,12 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 			return
 		}
 		if !isParticipant {
-			rt.baseLogger.Infoln("User " + token + " is NOT a participant of conversation " + specifiedConversationID + ".")
-			http.Error(w, "User "+token+" is not a participant of conversation "+specifiedConversationID, http.StatusForbidden)
+			rt.baseLogger.Infoln("User " + token + " is NOT a participant of conversation " + SpecifiedConversationID + ".")
+			http.Error(w, "User "+token+" is not a participant of conversation "+SpecifiedConversationID, http.StatusForbidden)
 			return
 		}
 
-		rt.baseLogger.Infoln("User " + token + " is a participant of conversation " + specifiedConversationID + ". Operation allowed.")
+		rt.baseLogger.Infoln("User " + token + " is a participant of conversation " + SpecifiedConversationID + ". Operation allowed.")
 
 		// Call the next handler if the user is a participant
 		next(w, r, ps)

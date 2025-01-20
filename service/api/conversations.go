@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -36,24 +35,13 @@ func (rt *_router) getUserConversations(w http.ResponseWriter, r *http.Request, 
 
 // function to get the info of a message
 func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.baseLogger.Infof("Getting message info for message %v", ps.ByName("message_id"))
+	rt.baseLogger.Infof("Getting message info for message %v", ps.ByName("messageId"))
 	userID := r.Header.Get("Authorization")
 	userID = userID[7:] // strip the "Bearer " prefix
 
-	// messageID is passed in the request body
-	type getMessageInfoRequest struct {
-		MessageID string `json:"message_id"`
-	}
+	messageID := ps.ByName("messageId")
 
-	var req getMessageInfoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	messageID := req.MessageID
-
-	messageID, conversationID, senderID, content, timestamp, is_forwarded, err := rt.db.GetMessageInfo(messageID, userID)
+	messageID, conversationID, senderID, content, timestamp, isForwarded, err := rt.db.GetMessageInfo(messageID, userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", messageID)
 		http.Error(w, "Failed to get message info", http.StatusInternalServerError)
@@ -69,12 +57,12 @@ func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	resp := map[string]interface{}{
-		"message_id":      messageID,
-		"conversation_id": conversationID,
-		"sender":          senderUsername,
-		"content":         content,
-		"timestamp":       timestamp,
-		"is_forwarded":    is_forwarded,
+		"messageId":      messageID,
+		"conversationId": conversationID,
+		"sender":         senderUsername,
+		"content":        content,
+		"timestamp":      timestamp,
+		"isForwarded":    isForwarded,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -85,9 +73,8 @@ func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps htt
 }
 
 func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.baseLogger.Infof("Getting conversation info for conversation %v", ps.ByName("conversation_id"))
-	fmt.Println("Getting conversation info for conversation", ps.ByName("conversation_id"))
-	conversationID := ps.ByName("conversation_id")
+	rt.baseLogger.Infof("Getting conversation info for conversation %v", ps.ByName("conversationId"))
+	conversationID := ps.ByName("conversationId")
 
 	// get the user ID from the Authorization header
 	userID := r.Header.Get("Authorization")
@@ -126,17 +113,17 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 	}
 
 	resp := map[string]interface{}{
-		"conversation_id": conversationID,
-		"is_group":        isGroup,
-		"name":            name,
-		"picture":         picture,
-		"messages":        messageIDs,
-		"participants":    participants,
-		"last_message": map[string]interface{}{
-			"content":    content,
-			"message_id": lastMessageID,
-			"sender_id":  senderID,
-			"timestamp":  timestamp,
+		"conversationId": conversationID,
+		"isGroup":        isGroup,
+		"name":           name,
+		"picture":        picture,
+		"messages":       messageIDs,
+		"participants":   participants,
+		"lastMessage": map[string]interface{}{
+			"content":   content,
+			"messageId": lastMessageID,
+			"senderId":  senderID,
+			"timestamp": timestamp,
 		},
 	}
 
@@ -149,11 +136,12 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 
 func (rt *_router) SendMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// in the body we will have:
-	// conversation_id, content, is_forwarded
+	// conversationId, content, isForwarded
+
 	type sendMessageRequest struct {
-		ConversationID string `json:"conversation_id"`
+		ConversationID string `json:"conversationId"`
 		Content        string `json:"content"`
-		IsForwarded    bool   `json:"is_forwarded"`
+		IsForwarded    bool   `json:"isForwarded"`
 	}
 
 	var req sendMessageRequest
@@ -200,7 +188,7 @@ func (rt *_router) SendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 
 	resp := map[string]interface{}{
-		"message_id": messageID,
+		"messageId": messageID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -262,7 +250,7 @@ func (rt *_router) CreateConversation(w http.ResponseWriter, r *http.Request, ps
 	}
 
 	resp := map[string]interface{}{
-		"conversation_id": conversationID,
+		"conversationId": conversationID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -276,10 +264,10 @@ func (rt *_router) CreateConversation(w http.ResponseWriter, r *http.Request, ps
 func (rt *_router) UpdateConversationName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// in the body we will have:
 	// name
-	// conversation_id
+	// conversationId
 	type updateConversationNameRequest struct {
 		Name           string `json:"name"`
-		ConversationID string `json:"conversation_id"`
+		ConversationID string `json:"conversationId"`
 	}
 
 	var req updateConversationNameRequest
@@ -303,10 +291,10 @@ func (rt *_router) UpdateConversationName(w http.ResponseWriter, r *http.Request
 func (rt *_router) UpdateConversationPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// in the body we will have:
 	// photo
-	// conversation_id
+	// conversationId
 	type updateConversationPhotoRequest struct {
 		Photo          string `json:"photo"`
-		ConversationID string `json:"conversation_id"`
+		ConversationID string `json:"conversationId"`
 	}
 
 	var req updateConversationPhotoRequest
@@ -329,7 +317,7 @@ func (rt *_router) UpdateConversationPhoto(w http.ResponseWriter, r *http.Reques
 func (rt *_router) AddParticipant(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// conversation ID and the user ID are expected to be in the request body
 	type addParticipantRequest struct {
-		ConversationID string `json:"conversation_id"`
+		ConversationID string `json:"conversationId"`
 		Username       string `json:"username"`
 	}
 	var req addParticipantRequest
@@ -392,7 +380,7 @@ func (rt *_router) RemoveParticipant(w http.ResponseWriter, r *http.Request, ps 
 	// conversation ID and the user ID are expected to be in the request body
 	// all necessary checks are done from the checkUserInConversation middleware.
 	type removeParticipantRequest struct {
-		ConversationID string `json:"conversation_id"`
+		ConversationID string `json:"conversationId"`
 		Username       string `json:"username"`
 	}
 	var req removeParticipantRequest
@@ -440,13 +428,13 @@ func (rt *_router) RemoveParticipant(w http.ResponseWriter, r *http.Request, ps 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// this basically just gets a message_id from the database, and sends it in another conversation, with the is_forwarded flag set to true.
+// this basically just gets a messageId from the database, and sends it in another conversation, with the isForwarded flag set to true.
 func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// in the body we will have:
-	// conversation_id, message_id
+	// conversationId, messageId
 	type forwardMessageRequest struct {
-		ConversationID string `json:"conversation_id"`
-		MessageID      string `json:"message_id"`
+		ConversationID string `json:"conversationId"`
+		MessageID      string `json:"messageId"`
 	}
 
 	var req forwardMessageRequest
@@ -498,7 +486,7 @@ func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	resp := map[string]interface{}{
-		"message_id": messageID,
+		"messageId": messageID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -511,33 +499,25 @@ func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 
 func (rt *_router) DeleteMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// in the body we will have:
-	// conversation_id, message_id
-	type deleteMessageRequest struct {
-		MessageID string `json:"message_id"`
-	}
-
-	var req deleteMessageRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
+	// conversationId, messageId
+	MessageID := ps.ByName("messageId")
 
 	// get the user ID from the Authorization header
 	userID := r.Header.Get("Authorization")
 	userID = userID[7:] // strip the "Bearer " prefix
 
 	// check if the message exists
-	_, _, _, _, _, _, err := rt.db.GetMessageInfo(req.MessageID, userID)
+	_, _, _, _, _, _, err := rt.db.GetMessageInfo(MessageID, userID)
 	if err != nil {
-		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", req.MessageID)
+		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", MessageID)
 		http.Error(w, "Failed to get message info", http.StatusInternalServerError)
 		return
 	}
 
 	// delete the message
-	err = rt.db.DeleteMessage(req.MessageID)
+	err = rt.db.DeleteMessage(MessageID)
 	if err != nil {
-		rt.baseLogger.WithError(err).Errorf("error deleting message %v", req.MessageID)
+		rt.baseLogger.WithError(err).Errorf("error deleting message %v", MessageID)
 		http.Error(w, "Failed to delete message", http.StatusInternalServerError)
 		return
 	}

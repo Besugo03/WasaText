@@ -61,3 +61,56 @@ func (rt *_router) changeUserPhoto(w http.ResponseWriter, r *http.Request, _ htt
 	rt.baseLogger.Infof("User %v updated with photo %v", token, newPhoto.Photo)
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (rt *_router) getAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	token := r.Header.Get("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	rt.baseLogger.Infof("Received token : %v", token)
+
+	// get all users from the database
+	users, err := rt.db.GetAllUsers()
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error getting the users from the database")
+		http.Error(w, "Failed to get the users", http.StatusInternalServerError)
+		return
+	}
+
+	// return the users as a json payload
+	w.Header().Set("content-type", "application/json")
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error encoding the users")
+		http.Error(w, "Failed to encode the users", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (rt *_router) checkUserExistence(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	token := r.Header.Get("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	rt.baseLogger.Infof("Received token : %v", token)
+
+	// user_id is passed in the URL
+	userID := ps.ByName("userId")
+
+	// check if the user exists in the database
+	exists, err := rt.db.CheckUserExistence(userID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error checking the user existence in the database")
+		http.Error(w, "Failed to check the user existence", http.StatusInternalServerError)
+		return
+	}
+
+	// return the result as a json payload
+	w.Header().Set("content-type", "application/json")
+	err = json.NewEncoder(w).Encode(struct {
+		Exists bool `json:"exists"`
+	}{
+		Exists: exists,
+	})
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error encoding the existence")
+		http.Error(w, "Failed to encode the existence", http.StatusInternalServerError)
+		return
+	}
+}

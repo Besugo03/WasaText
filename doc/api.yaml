@@ -125,6 +125,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
+  /users:
+    get:
+      tags: ["user"]
+      description: Retrieve all users
+      summary: Retrieve all users
+      operationId: getUsers
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                required:
+                  - users
+                description: the object that contains the array of user ids
+                type: object
+                properties:
+                  users:
+                    description: An array of usernames
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ValidName'
+                    minItems: 0 # 'users' can still be empty though
+                    maxItems: 999999999
+              example:
+                users: ["Alice", "Bob", "Juanito el matador de IBM"]
+
+  /users/exists/{username}:
+    get:
+      tags: ["user"]
+      description: Check if a user exists
+      summary: Check if a user exists
+      operationId: userExists
+      parameters:
+        - name: userID
+          description: ID of the user
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      responses:
+        '200':
+          description: User exists
+          content:
+            application/json:
+              schema:
+                description: the object that contains the user's existence
+                type: object
+                properties:
+                  exists:
+                    description: A boolean that indicates if the user exists.
+                    type: boolean
+                    example: true
+              example:
+                exists: true
+
   /conversations:
     get:
       tags: ["conversation"]
@@ -303,41 +359,37 @@ paths:
                 example:
                   messageId: "abcdef012345"
           description: Message sent successfully
+
+  /conversations/message/delete/{messageID}:
     delete:
       tags: ["message"]
-      description: Delete a message
-      summary: Delete a message
+      description: Remove a message from a conversation
+      summary: Remove a message from a conversation
       operationId: deleteMessage
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: the object that contains the message_id of the message to delete.
-              type: object
-              properties:
-                messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
+      parameters:
+        - name: messageID
+          description: ID of the message
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/MessageOrCommentId'
       responses:
         '204':
-          description: Message deleted successfully
+          description: Message removed successfully
 
-  /conversations/message/info:
+  /conversations/message/info/{messageID}:
     get:
+      parameters:
+          - name: messageID
+            description: ID of the message
+            in: path
+            required: true
+            schema:
+              $ref: '#/components/schemas/MessageOrCommentId'
       tags: ["message"]
       description: Retrieve a single message's info.
       summary: Retrieve a single message
       operationId: getMessage
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: the object that contains the message_id of the message to retrieve the information from.
-              type: object
-              properties:
-                messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
       responses:
         '200':
           description: Details of the message
@@ -403,12 +455,19 @@ paths:
                   messageId: "1"
           description: Message forwarded successfully
 
-  /conversations/message/comment:
+  /conversations/message/comment/{messageID}:
     post:
       tags: ["message"]
       description: Comment on a message
       summary: Comment on a message
       operationId: commentMessage
+      parameters:
+        - name: messageID
+          description: ID of the message
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/MessageOrCommentId'
       requestBody:
         required: true
         content:
@@ -417,8 +476,6 @@ paths:
               description: the object that contains the new comment for a message
               type: object
               properties:
-                messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
                 content:
                   description: A valid comment for a message.
                   maxLength: 1000
@@ -427,30 +484,22 @@ paths:
                   example: "This is a comment."
                   type: string
       responses:
-        '201':
-          content:
-            application/json:
-              example:
-                message: "OK"
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
+        '202': # had to make it a 202 because every single thing i tried made the IBM lords mad.
           description: Comment added successfully
+
+  /conversations/message/comment/{commentID}:
+    parameters:
+      - name: commentID
+        description: ID of the comment
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/MessageOrCommentId'
     delete:
       tags: ["message"]
       description: Remove comment from a message
       summary: Remove comment from a message
       operationId: uncommentMessage
-      requestBody:
-        required: true
-        content:
-        # a json containing message_id : "abcdef012345"
-          application/json:
-            schema:
-              description: the object that contains the comment_id of the comment to remove from the message.
-              type: object
-              properties:
-                messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
       responses:
         '204':
           description: Comment removed successfully
@@ -459,16 +508,6 @@ paths:
       description: Retrieve a single comment's information
       summary: Retrieve a single comment's information
       operationId: getComments
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: the object that contains the comment_id of the comment to retrieve the information from.
-              type: object
-              properties:
-                commentId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
       responses:
         '200':
           description: List of comments
@@ -492,22 +531,19 @@ paths:
                   timestamp: "2021-01-01T00:00:00Z"
                   sender: "Besugo"
 
-  /conversation/message/getcomments:
+  /conversation/message/getcomments/{messageID}:
     get:
       tags: ["message"]
       description: Retrieve all comments from a message
       summary: Retrieve all comments from a message
       operationId: getMessageComments
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: the object that contains the message_id of the message to retrieve the comments from.
-              type: object
-              properties:
-                messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
+      parameters:
+        - name: messageID
+          description: ID of the message
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/MessageOrCommentId'
       responses:
         '200':
           description: List of comments

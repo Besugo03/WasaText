@@ -2,7 +2,8 @@ import requests
 import json
 
 # URL del server
-BASE_URL = "http://localhost:6969"
+# BASE_URL = "http://localhost:6969"
+BASE_URL = "http://localhost:3000"
 
 def test_hello_world():
     url = f"{BASE_URL}/"
@@ -81,7 +82,7 @@ def test_createConversation_withDiuk(userID):
 def test_sendMessage(userID, conversationID, content, is_forwarded):
     url = f"{BASE_URL}/conversations/message"
     data = {
-        "conversation_id": conversationID,
+        "conversationId": conversationID,
         "content": content,
         "is_forwarded": is_forwarded,
     }
@@ -298,16 +299,17 @@ def test_deleteComment(userID, commentID):
         print("Response:", response.text)
 
 def test_getMessageInfo(userID, messageID):
-    url = f"{BASE_URL}/conversations/message/info"
+    url = f"{BASE_URL}/conversations/message/info/{messageID}"
     headers = {
         "Authorization" : "Bearer " + userID,
     }
 
-    body = {
-        "message_id": messageID,
-    }
+    # body = {
+    #     "message_id": messageID,
+    # }
 
-    response = requests.get(url, headers=headers, json=body)
+    # response = requests.get(url, headers=headers, json=body)
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         print("Get Message Info Test Passed")
         print("Response:", response.text)
@@ -316,6 +318,37 @@ def test_getMessageInfo(userID, messageID):
         print("Status Code:", response.status_code)
         print("Response:", response.text)
 
+def test_getAllUsers(userID):
+    url = f"{BASE_URL}/users"
+    headers = {
+        "Authorization" : "Bearer " + userID,
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        print("Get All Users Test Passed")
+        print("Response:", response.text)
+    else:
+        print("Get All Users Test Failed")
+        print("Status Code:", response.status_code)
+        print("Response:", response.text)
+
+def test_getUserExistence(userID, username):
+    url = f"{BASE_URL}/users/exists/{username}"
+    headers = {
+        "Authorization" : "Bearer " + userID,
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        print("Get User Existence Test Passed")
+        print("Response:", response.text)
+    else:
+        print("Get User Existence Test Failed")
+        print("Status Code:", response.status_code)
+        print("Response:", response.text)
+
+
 if __name__ == "__main__":
     # Test "Hello World" endpoint
     test_hello_world()
@@ -323,6 +356,10 @@ if __name__ == "__main__":
     user1 = test_login("newTestUser")
     user2 = test_login("besugo")
     user3 = test_login("diuk")
+
+    # test_getAllUsers(user1)
+    # test_getUserExistence(user1, "pinselo")
+    # test_getUserExistence(user1, "diuk")
 
     # test_getConversations(user1)
     # test_getConversations(user2)
@@ -342,8 +379,7 @@ if __name__ == "__main__":
 
     # test_getConversations(user3) # questo non setta nullo come letto
     # test_getConversationInfo(user3, "1") # questo setta tutti i messaggi di quella conversazione come ricevuti
-    # test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
-    
+    test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
 
     # test_forwardMessage(user1, "1", "1") 
     # test_deleteMessage(user1, "1")

@@ -15,7 +15,7 @@ docker-compose.log
 .vscode/*
 !.vscode/extensions.json
 
-# cose che ho aggiunto io
+# cose che ho aggiunto io ---------------------------------------
 
 # Node.js dependencies
 node_modules/

@@ -18,26 +18,30 @@ func (rt *_router) Handler() http.Handler {
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 
+	// user getting and existence verification.
+	rt.router.GET("/users", rt.authenticate(rt.getAllUsers))
+	rt.router.GET("/users/exists/:username", rt.authenticate(rt.checkUserExistence))
+
 	rt.router.GET("/conversations", rt.authenticate(rt.getUserConversations))
 	// route protette dal membership check per assicurarsi che l'utente faccia parte della conversazione.
-	rt.router.GET("/conversations/info/:conversation_id", rt.authenticate(rt.checkUserInConversation(rt.GetConversationInfo)))
+	rt.router.GET("/conversations/info/:conversationId", rt.authenticate(rt.checkUserInConversation(rt.GetConversationInfo)))
 	rt.router.POST("/conversations/create", rt.authenticate(rt.CreateConversation))
 	rt.router.PUT("/conversations/adduser", rt.authenticate(rt.checkUserInConversation(rt.AddParticipant)))
 	rt.router.PUT("/conversations/kickuser", rt.authenticate(rt.checkUserInConversation(rt.RemoveParticipant)))
 
 	rt.router.POST("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.SendMessage)))
-	rt.router.GET("/conversations/message/info", rt.authenticate(rt.checkUserInConversation(rt.GetMessageInfo)))
+	rt.router.GET("/conversations/message/info/:messageId", rt.authenticate(rt.checkUserInConversation(rt.GetMessageInfo)))
 	rt.router.POST("/conversations/message/forward", rt.authenticate(rt.checkUserInConversation((rt.ForwardMessage))))
-	rt.router.DELETE("/conversations/message", rt.authenticate(rt.checkUserInConversation(rt.DeleteMessage)))
+	rt.router.DELETE("/conversations/message/delete/:messageId", rt.authenticate(rt.checkUserInConversation(rt.DeleteMessage)))
 	rt.router.PUT("/conversations/photo", rt.authenticate(rt.checkUserInConversation(rt.UpdateConversationPhoto)))
 	rt.router.PUT("/conversations/name", rt.authenticate(rt.checkUserInConversation(rt.UpdateConversationName)))
 
 	// comments
 	// They all include the conversation membership check, since comments are tied to messages, which are tied to conversations.
-	rt.router.POST("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.AddComment)))
-	rt.router.DELETE("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.DeleteComment)))
-	rt.router.GET("/conversations/message/comment", rt.authenticate(rt.checkUserInConversation(rt.GetCommentInfo)))
-	rt.router.GET("/conversations/message/getcomments", rt.authenticate(rt.checkUserInConversation(rt.GetComments)))
+	rt.router.POST("/conversations/message/comment/:messageId", rt.authenticate(rt.checkUserInConversation(rt.AddComment)))
+	rt.router.DELETE("/conversations/message/comment/:commentId", rt.authenticate(rt.checkUserInConversation(rt.DeleteComment)))
+	rt.router.GET("/conversations/message/comment/:commentId", rt.authenticate(rt.checkUserInConversation(rt.GetCommentInfo)))
+	rt.router.GET("/conversations/message/getcomments/:messageId", rt.authenticate(rt.checkUserInConversation(rt.GetComments)))
 
 	return rt.router
 }
