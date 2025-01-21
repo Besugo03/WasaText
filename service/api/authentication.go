@@ -80,7 +80,7 @@ func (rt *_router) authenticate(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// Extract the token from the Authorization header
 		token := r.Header.Get("Authorization")
-		rt.baseLogger.Infof("Received token:", token)
+		// rt.baseLogger.Infof("Received token:", token)
 		// remove the "Bearer "
 		token = strings.TrimPrefix(token, "Bearer ")
 
@@ -97,7 +97,7 @@ func (rt *_router) authenticate(next httprouter.Handle) httprouter.Handle {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		rt.baseLogger.Infof("Token %v is valid", token)
+		// rt.baseLogger.Infof("Token %v is valid", token)
 
 		// Call the next handler if the token is valid.
 		next(w, r, ps)
@@ -110,7 +110,7 @@ func (rt *_router) checkUserInConversation(next httprouter.Handle) httprouter.Ha
 		// Extract the token from the Authorization header
 		token := r.Header.Get("Authorization")
 		token = strings.TrimPrefix(token, "Bearer ")
-		rt.baseLogger.Infof("Received token : %v", token)
+		// rt.baseLogger.Infof("Received token : %v", token)
 
 		var SpecifiedConversationID string
 

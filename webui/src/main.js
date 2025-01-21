@@ -8,8 +8,11 @@ import LoadingSpinner from './components/LoadingSpinner.vue'
 import './assets/dashboard.css'
 import './assets/main.css'
 
+const username = reactive({value: ''});
+
 const app = createApp(App)
 app.config.globalProperties.$axios = axios;
+app.config.globalProperties.$username = username;
 app.component("ErrorMsg", ErrorMsg);
 app.component("LoadingSpinner", LoadingSpinner);
 app.use(router)

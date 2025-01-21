@@ -48,6 +48,7 @@ type AppDatabase interface {
 	UpdateUser(username string, userid string, photo string) error   // update the user's photo. Arguments can be nil to keep the old value.
 	GetAllUsers() ([]string, error)
 	CheckUserExistence(userid string) (bool, error)
+	GetUserPhoto(username string) (string, error)
 
 	CheckConversationsTable() error
 	CreateConversation(isGroup bool, name string, picture string) (string, error)

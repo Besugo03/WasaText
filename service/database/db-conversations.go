@@ -158,6 +158,12 @@ func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
 func (db *appdbimpl) AddParticipant(conversationID string, userID string) error {
 	db.CheckConversationsTable()
 	_, err := db.c.Exec("INSERT INTO participants_table (conversation_id, user_id) VALUES (?, ?)", conversationID, userID)
+	if err != nil {
+		return err
+	}
+
+	// if adding the participant makes it so they are more than 2, the conversation is automatically a group conversation.
+	_, err = db.c.Exec("UPDATE conversations_table SET is_group = TRUE WHERE conversation_id = ? AND (SELECT COUNT(*) FROM participants_table WHERE conversation_id = ?) > 2", conversationID, conversationID)
 	return err
 }
 
@@ -165,6 +171,14 @@ func (db *appdbimpl) AddParticipant(conversationID string, userID string) error 
 func (db *appdbimpl) RemoveParticipant(conversationID string, userID string) error {
 	db.CheckConversationsTable()
 	_, err := db.c.Exec("DELETE FROM participants_table WHERE conversation_id = ? AND user_id = ?", conversationID, userID)
+
+	if err != nil {
+		return err
+	}
+
+	// if removing the participant makes it so there are only 2 participants, the conversation is automatically flagged as a non group
+	_, err = db.c.Exec("UPDATE conversations_table SET is_group = FALSE WHERE conversation_id = ? AND (SELECT COUNT(*) FROM participants_table WHERE conversation_id = ?) <= 2", conversationID, conversationID)
+
 	return err
 }
 

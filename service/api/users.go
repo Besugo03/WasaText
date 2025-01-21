@@ -114,3 +114,31 @@ func (rt *_router) checkUserExistence(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 }
+
+// get a specified user's profile details from the database (username, photo)
+func (rt *_router) getUserPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	// from the path
+	username := ps.ByName("username")
+
+	// get the user's profile details from the database
+	photo, err := rt.db.GetUserPhoto(username)
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error getting the user's photo from the database")
+		http.Error(w, "Failed to get the user's photo", http.StatusInternalServerError)
+		return
+	}
+
+	// return the user's profile details as a json payload
+	w.Header().Set("content-type", "application/json")
+	err = json.NewEncoder(w).Encode(struct {
+		Photo string `json:"photo"`
+	}{
+		Photo: photo,
+	})
+	if err != nil {
+		rt.baseLogger.WithError(err).Error("Error encoding the user's profile")
+		http.Error(w, "Failed to encode the user's profile", http.StatusInternalServerError)
+		return
+	}
+}

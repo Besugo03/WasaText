@@ -101,7 +101,7 @@ def test_sendMessage(userID, conversationID, content, is_forwarded):
 def test_addParticipant(userID, conversationID, participantID):
     url = f"{BASE_URL}/conversations/adduser"
     data = {
-        "conversation_id": conversationID,
+        "conversationId": conversationID,
         "username" : participantID,
     }
     headers = {
@@ -119,13 +119,13 @@ def test_addParticipant(userID, conversationID, participantID):
 def test_removeParticipant(userID, conversationID, participantID):
     url = f"{BASE_URL}/conversations/kickuser"
     data = {
-        "conversation_id": conversationID,
+        "conversationId": conversationID,
         "username" : participantID,
     }
     headers = {
         "Authorization" : "Bearer " + userID,
     }
-    response = requests.delete(url, json=data, headers=headers)
+    response = requests.put(url, json=data, headers=headers)
     if response.status_code == 200 or response.status_code == 201:
         print("Remove Participant Test Passed")
         print("Response:", response.text)
@@ -227,7 +227,7 @@ def test_changeGroupPhoto(userID, conversationID, newPhoto):
 def test_changeGroupName(userID, conversationID, newName):
     url = f"{BASE_URL}/conversations/name"
     data = {
-        "conversation_id": conversationID,
+        "conversationId": conversationID,
         "name": newName,
     }
     headers ={   
@@ -356,6 +356,10 @@ if __name__ == "__main__":
     user1 = test_login("newTestUser")
     user2 = test_login("besugo")
     user3 = test_login("diuk")
+    user4 = test_login("pinselo")
+    user4 = test_login("vi")
+    user5 = test_login("johnny")
+    user6 = test_login("panam")
 
     # test_getAllUsers(user1)
     # test_getUserExistence(user1, "pinselo")
@@ -366,30 +370,32 @@ if __name__ == "__main__":
     # test_getConversations(user3)
 
     # test_createConversation_withDiuk(user1)
-    # test_getConversationInfo(user1, "1")
+    test_getConversationInfo(user3, "3")
 
-    # test_sendMessage(user1, "1", "message four", False)
-    # test_sendMessage(user2, "1", "Hola, soy besugo", False)
+    # test_sendMessage(user1, "1", "Ciao Diuk, sono TestUser.", False)
+    # test_sendMessage(user3, "2", "Chat da solo! sono pazzo!", False)
 
     # test_removeParticipant(user1, "1", "diuk")
-    # test_removeParticipant(user1, "2", "diuk")
+    # test_removeParticipant(user3, "2", "newTestUser")p
 
-    # test_addParticipant(user2, "1", "diuk")
+    # test_addParticipant(user3, "3", "panam")
     # test_removeParticipant(user2, "1", "diuk")
 
     # test_getConversations(user3) # questo non setta nullo come letto
     # test_getConversationInfo(user3, "1") # questo setta tutti i messaggi di quella conversazione come ricevuti
-    test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
+    # test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
 
-    # test_forwardMessage(user1, "1", "1") 
+    # test_forwardMessage(user1, "1", "1")
     # test_deleteMessage(user1, "1")
 
     # test_changePicture(user1, "https://i.imgur.com/testuno.jpg")
     # test_changeUsername(user1, "newTestUser")
 
     # test_changeGroupPhoto(user1, "1", "https://i.imgur.com/GROUPtest")
-    # test_changeGroupName(user1, "1", "RRRrrrrepiteLoQueDicess")
+    # test_changeGroupName(user1, "3", "RRRrrrrepiteLoQueDicess")
 
     # test_addCommentToMessage(user1, "1", "comment to first message")
     # test_getCommentInfo(user1, "1")
     # test_deleteComment(user1, "1")
+    
+    # test_getConversationInfo(user3, "3")

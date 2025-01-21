@@ -121,3 +121,11 @@ func (db *appdbimpl) CheckUserExistence(username string) (bool, error) {
 	}
 	return count > 0, nil
 }
+
+// get a user's photo
+func (db *appdbimpl) GetUserPhoto(username string) (string, error) {
+	db.CheckUsersTable()
+	var photo string
+	err := db.c.QueryRow("SELECT photo FROM users_table WHERE username = ?", username).Scan(&photo)
+	return photo, err
+}

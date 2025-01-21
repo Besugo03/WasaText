@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -87,7 +88,22 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	participants, err := rt.db.GetParticipants(conversationID)
+	participantsIDs, err := rt.db.GetParticipants(conversationID)
+
+	// since we want the usernames, we need to convert the user IDs to usernames
+	participants := make([]string, len(participantsIDs))
+	for i, participantID := range participantsIDs {
+		username, err := rt.db.GetUserName(participantID)
+		if err != nil {
+			rt.baseLogger.WithError(err).Errorf("error getting username for user %v", participantID)
+			http.Error(w, "Failed to get username", http.StatusInternalServerError)
+			return
+		}
+
+		participants[i] = username
+	}
+
+	// get the participants of the conversation
 
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting participants for conversation %v", conversationID)
@@ -105,11 +121,24 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 
 	// also, get the details of the last message for the preview
 	content, lastMessageID, senderID, timestamp, err := rt.db.GetLastMessage(conversationID)
+	var senderUsername string
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting last message for conversation %v", conversationID)
-		http.Error(w, "Failed to get last message", http.StatusInternalServerError)
+		// http.Error(w, "Failed to get last message", http.StatusInternalServerError)
+		// set the last message to an empty string if there is no last message
+		content = ""
+		lastMessageID = ""
+		senderUsername = ""
+		timestamp = ""
+	} else {
+		// we want the USERNAME of the sender, not the user ID
+		senderUsername, err = rt.db.GetUserName(senderID)
+		if err != nil {
+			rt.baseLogger.WithError(err).Errorf("error getting username for user %v", senderID)
+			http.Error(w, "Failed to get username", http.StatusInternalServerError)
+			return
+		}
 
-		return
 	}
 
 	resp := map[string]interface{}{
@@ -122,7 +151,7 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 		"lastMessage": map[string]interface{}{
 			"content":   content,
 			"messageId": lastMessageID,
-			"senderId":  senderID,
+			"sender":    senderUsername,
 			"timestamp": timestamp,
 		},
 	}
@@ -265,6 +294,11 @@ func (rt *_router) UpdateConversationName(w http.ResponseWriter, r *http.Request
 	// in the body we will have:
 	// name
 	// conversationId
+
+	// get the user ID from the Authorization header
+	userID := r.Header.Get("Authorization")
+	userID = userID[7:] // strip the "Bearer " prefix
+
 	type updateConversationNameRequest struct {
 		Name           string `json:"name"`
 		ConversationID string `json:"conversationId"`
@@ -278,7 +312,17 @@ func (rt *_router) UpdateConversationName(w http.ResponseWriter, r *http.Request
 
 	conversationID := req.ConversationID
 
-	err := rt.db.UpdateConversation(conversationID, false, req.Name, "")
+	// get the current isGroup state
+	_, isGroup, _, _, err := rt.db.GetConversationInfo(conversationID, userID)
+
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting conversation info for conversation %v", conversationID)
+		http.Error(w, "Failed to get conversation info", http.StatusInternalServerError)
+		return
+	}
+
+	err = rt.db.UpdateConversation(conversationID, isGroup, req.Name, "")
+
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error updating conversation %v", conversationID)
 		http.Error(w, "Failed to update conversation", http.StatusInternalServerError)
@@ -292,6 +336,12 @@ func (rt *_router) UpdateConversationPhoto(w http.ResponseWriter, r *http.Reques
 	// in the body we will have:
 	// photo
 	// conversationId
+
+	// get the user ID from the Authorization header
+
+	userID := r.Header.Get("Authorization")
+	userID = userID[7:] // strip the "Bearer " prefix
+
 	type updateConversationPhotoRequest struct {
 		Photo          string `json:"photo"`
 		ConversationID string `json:"conversationId"`
@@ -303,7 +353,17 @@ func (rt *_router) UpdateConversationPhoto(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := rt.db.UpdateConversation(req.ConversationID, false, "", req.Photo)
+	// get the current isGroup state
+	_, isGroup, _, _, err := rt.db.GetConversationInfo(req.ConversationID, userID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting conversation info for conversation %v", req.ConversationID)
+		http.Error(w, "Failed to get conversation info", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("current isGroup value : ", isGroup)
+
+	err = rt.db.UpdateConversation(req.ConversationID, isGroup, "", req.Photo)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error updating conversation %v", req.ConversationID)
 		http.Error(w, "Failed to update conversation", http.StatusInternalServerError)

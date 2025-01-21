@@ -21,6 +21,7 @@ func (rt *_router) Handler() http.Handler {
 	// user getting and existence verification.
 	rt.router.GET("/users", rt.authenticate(rt.getAllUsers))
 	rt.router.GET("/users/exists/:username", rt.authenticate(rt.checkUserExistence))
+	rt.router.GET("/users/photo/:username", rt.authenticate(rt.getUserPhoto))
 
 	rt.router.GET("/conversations", rt.authenticate(rt.getUserConversations))
 	// route protette dal membership check per assicurarsi che l'utente faccia parte della conversazione.
