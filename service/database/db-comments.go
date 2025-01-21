@@ -26,15 +26,21 @@ func (db *appdbimpl) CheckCommentsTable() error {
 // the sender_id is the user_id of the sender.
 // the content is the content of the comment.
 func (db *appdbimpl) AddComment(messageID string, senderID string, content string) error {
-	db.CheckCommentsTable()
-	_, err := db.c.Exec("INSERT INTO comments_table (message_id, sender_id, content) VALUES (?, ?, ?)", messageID, senderID, content)
+	err := db.CheckCommentsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("INSERT INTO comments_table (message_id, sender_id, content) VALUES (?, ?, ?)", messageID, senderID, content)
 	return err
 }
 
 // gets all the comments for a message.
 // returns the comment_ids, message_ids, sender_ids, contents, and timestamps.
 func (db *appdbimpl) GetComments(messageID string) (commentIDs []string, messageIDs []string, senderIDs []string, contents []string, timestamps []string, err error) {
-	db.CheckCommentsTable()
+	err = db.CheckCommentsTable()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	rows, err := db.c.Query("SELECT comment_id, message_id, sender_id, content, timestamp FROM comments_table WHERE message_id = ?", messageID)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
@@ -57,16 +63,22 @@ func (db *appdbimpl) GetComments(messageID string) (commentIDs []string, message
 
 // deletes a comment from the comments table.
 func (db *appdbimpl) DeleteComment(commentID string) error {
-	db.CheckCommentsTable()
-	_, err := db.c.Exec("DELETE FROM comments_table WHERE comment_id = ?", commentID)
+	err := db.CheckCommentsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("DELETE FROM comments_table WHERE comment_id = ?", commentID)
 	return err
 }
 
 // gets the information for a comment.
 // returns the message_id, sender_id, content, and timestamp.
 func (db *appdbimpl) GetCommentInfo(commentID string) (string, string, string, string, error) {
-	db.CheckCommentsTable()
+	err := db.CheckCommentsTable()
+	if err != nil {
+		return "", "", "", "", err
+	}
 	var messageID, senderID, content, timestamp string
-	err := db.c.QueryRow("SELECT message_id, sender_id, content, timestamp FROM comments_table WHERE comment_id = ?", commentID).Scan(&messageID, &senderID, &content, &timestamp)
+	err = db.c.QueryRow("SELECT message_id, sender_id, content, timestamp FROM comments_table WHERE comment_id = ?", commentID).Scan(&messageID, &senderID, &content, &timestamp)
 	return messageID, senderID, content, timestamp, err
 }

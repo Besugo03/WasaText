@@ -24,7 +24,10 @@ func (db *appdbimpl) CheckUsersTable() error {
 // this basically inserts a new user into the database.
 // the username is the user's username and the userid is the user's auth token.
 func (db *appdbimpl) RegisterUser(username string, userid string, photo string) error {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return err
+	}
 	// _, err := db.c.Exec("INSERT INTO users_table (username, user_id) VALUES (?, ?)", username, userid)
 	// if we try to insert a user that already exists, the database will return an error.
 	// if we try to insert a userid that already exists, the database will return an error.
@@ -33,7 +36,7 @@ func (db *appdbimpl) RegisterUser(username string, userid string, photo string) 
 	// if it does, return an error.
 	// if it doesn't, insert the user into the database.
 	var count int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ? OR user_id = ?", username, userid).Scan(&count)
+	err = db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ? OR user_id = ?", username, userid).Scan(&count)
 
 	if err != nil {
 		return err
@@ -48,10 +51,13 @@ func (db *appdbimpl) RegisterUser(username string, userid string, photo string) 
 }
 
 func (db *appdbimpl) GetUserID(username string) (string, error) {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return "", err
+	}
 	var userid string
 	// get the userid from the table
-	err := db.c.QueryRow("SELECT user_id FROM users_table WHERE username = ?", username).Scan(&userid)
+	err = db.c.QueryRow("SELECT user_id FROM users_table WHERE username = ?", username).Scan(&userid)
 	// this basically gets the user's auth token from the database.
 	// the username is the user's username.
 	// the userid is the user's auth token.
@@ -60,21 +66,27 @@ func (db *appdbimpl) GetUserID(username string) (string, error) {
 }
 
 func (db *appdbimpl) GetUserName(userid string) (string, error) {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return "", err
+	}
 	var name string
-	err := db.c.QueryRow("SELECT username FROM users_table WHERE user_id = ?", userid).Scan(&name)
+	err = db.c.QueryRow("SELECT username FROM users_table WHERE user_id = ?", userid).Scan(&name)
 	return name, err
 }
 
 func (db *appdbimpl) UpdateUser(username string, userid string, photo string) error {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return err
+	}
 	// if the user doesn't exist, return an error.
 	// if the user exists, update the user.
 	// for each argument that is nil, keep the old value.
 	// first, we get the old values.
 	var oldUsername string
 	var oldPhoto string
-	err := db.c.QueryRow("SELECT username, photo FROM users_table WHERE user_id = ?", userid).Scan(&oldUsername, &oldPhoto)
+	err = db.c.QueryRow("SELECT username, photo FROM users_table WHERE user_id = ?", userid).Scan(&oldUsername, &oldPhoto)
 	if err != nil {
 		return err
 	}
@@ -93,7 +105,10 @@ func (db *appdbimpl) UpdateUser(username string, userid string, photo string) er
 
 // get all users
 func (db *appdbimpl) GetAllUsers() ([]string, error) {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return nil, err
+	}
 	rows, err := db.c.Query("SELECT username FROM users_table")
 	if err != nil {
 		return nil, err
@@ -113,9 +128,12 @@ func (db *appdbimpl) GetAllUsers() ([]string, error) {
 
 // check if a user exists
 func (db *appdbimpl) CheckUserExistence(username string) (bool, error) {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return false, err
+	}
 	var count int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ?", username).Scan(&count)
+	err = db.c.QueryRow("SELECT COUNT(*) FROM users_table WHERE username = ?", username).Scan(&count)
 	if err != nil {
 		return false, err
 	}
@@ -124,8 +142,11 @@ func (db *appdbimpl) CheckUserExistence(username string) (bool, error) {
 
 // get a user's photo
 func (db *appdbimpl) GetUserPhoto(username string) (string, error) {
-	db.CheckUsersTable()
+	err := db.CheckUsersTable()
+	if err != nil {
+		return "", err
+	}
 	var photo string
-	err := db.c.QueryRow("SELECT photo FROM users_table WHERE username = ?", username).Scan(&photo)
+	err = db.c.QueryRow("SELECT photo FROM users_table WHERE username = ?", username).Scan(&photo)
 	return photo, err
 }

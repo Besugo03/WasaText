@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -74,7 +73,10 @@ func (db *appdbimpl) CheckConversationsTable() error {
 
 // returns the newly created conversation's conversation_id.
 func (db *appdbimpl) CreateConversation(isGroup bool, name string, photo string) (string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return "", err
+	}
 	// if some of the values are nil, they will be set to their default values.
 	res, err := db.c.Exec("INSERT INTO conversations_table (is_group, name, photo) VALUES (?, ?, ?)", isGroup, name, photo)
 	if err != nil {
@@ -87,10 +89,13 @@ func (db *appdbimpl) CreateConversation(isGroup bool, name string, photo string)
 // this function updates the conversation with the given conversationID.
 // the name and photo are updated to the given values.
 func (db *appdbimpl) UpdateConversation(conversationID string, isGroup bool, name string, photo string) error {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return err
+	}
 	// Get the current values
 	var currentName, currentPhoto string
-	err := db.c.QueryRow("SELECT name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&currentName, &currentPhoto)
+	err = db.c.QueryRow("SELECT name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&currentName, &currentPhoto)
 	if err != nil {
 		return err
 	}
@@ -108,17 +113,23 @@ func (db *appdbimpl) UpdateConversation(conversationID string, isGroup bool, nam
 }
 
 func (db *appdbimpl) DeleteConversation(conversationID string) error {
-	db.CheckConversationsTable()
-	_, err := db.c.Exec("DELETE FROM conversations_table WHERE conversation_id = ?", conversationID)
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("DELETE FROM conversations_table WHERE conversation_id = ?", conversationID)
 	return err
 }
 
 func (db *appdbimpl) GetConversationInfo(conversationID string, userID string) (string, bool, string, string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return "", false, "", "", err
+	}
 	var isGroup bool
 	var name string
 	var photo string
-	err := db.c.QueryRow("SELECT is_group, name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&isGroup, &name, &photo)
+	err = db.c.QueryRow("SELECT is_group, name, photo FROM conversations_table WHERE conversation_id = ?", conversationID).Scan(&isGroup, &name, &photo)
 	if err != nil {
 		return "", false, "", "", err
 	}
@@ -133,8 +144,10 @@ func (db *appdbimpl) GetConversationInfo(conversationID string, userID string) (
 }
 
 func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
-	db.CheckConversationsTable()
-
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return nil, err
+	}
 	rows, err := db.c.Query("SELECT conversation_id FROM participants_table WHERE user_id = ?", userID)
 	if err != nil {
 		return nil, err
@@ -150,14 +163,20 @@ func (db *appdbimpl) GetUserConversations(userID string) ([]string, error) {
 		}
 		conversations = append(conversations, conversationID)
 	}
-
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return conversations, nil
 }
 
 // add participant to conversation
 func (db *appdbimpl) AddParticipant(conversationID string, userID string) error {
-	db.CheckConversationsTable()
-	_, err := db.c.Exec("INSERT INTO participants_table (conversation_id, user_id) VALUES (?, ?)", conversationID, userID)
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("INSERT INTO participants_table (conversation_id, user_id) VALUES (?, ?)", conversationID, userID)
 	if err != nil {
 		return err
 	}
@@ -169,8 +188,11 @@ func (db *appdbimpl) AddParticipant(conversationID string, userID string) error 
 
 // remove participant from conversation
 func (db *appdbimpl) RemoveParticipant(conversationID string, userID string) error {
-	db.CheckConversationsTable()
-	_, err := db.c.Exec("DELETE FROM participants_table WHERE conversation_id = ? AND user_id = ?", conversationID, userID)
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("DELETE FROM participants_table WHERE conversation_id = ? AND user_id = ?", conversationID, userID)
 
 	if err != nil {
 		return err
@@ -184,7 +206,10 @@ func (db *appdbimpl) RemoveParticipant(conversationID string, userID string) err
 
 // get all participants in a conversation
 func (db *appdbimpl) GetParticipants(conversationID string) ([]string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return nil, err
+	}
 	rows, err := db.c.Query("SELECT user_id FROM participants_table WHERE conversation_id = ?", conversationID)
 	if err != nil {
 		return nil, err
@@ -200,17 +225,19 @@ func (db *appdbimpl) GetParticipants(conversationID string) ([]string, error) {
 		}
 		participants = append(participants, userID)
 	}
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return participants, nil
 }
 
 // sends a message to a conversation. Returns the message_id of the newly created message.
 func (db *appdbimpl) SendMessage(conversationID string, senderID string, content string, is_forwarded bool) (string, error) {
-	fmt.Println("SendMessage called with the following parameters:")
-	fmt.Println("conversationID:", conversationID)
-	fmt.Println("senderID:", senderID)
-	fmt.Println("content:", content)
-	fmt.Println("is_forwarded:", is_forwarded)
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return "", err
+	}
 	res, err := db.c.Exec("INSERT INTO messages_table (conversation_id, sender_id, content, is_forwarded) VALUES (?, ?, ?, ?)", conversationID, senderID, content, is_forwarded)
 	if err != nil {
 		return "", err
@@ -247,7 +274,10 @@ func (db *appdbimpl) SendMessage(conversationID string, senderID string, content
 
 // get information about the messages in a conversation
 func (db *appdbimpl) GetMessages(conversationID string) ([]string, []string, []string, []string, []string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	rows, err := db.c.Query("SELECT message_id, conversation_id, sender_id, content, timestamp FROM messages_table WHERE conversation_id = ?", conversationID)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
@@ -275,23 +305,33 @@ func (db *appdbimpl) GetMessages(conversationID string) ([]string, []string, []s
 		contents = append(contents, content)
 		timestamps = append(timestamps, timestamp)
 	}
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
 	return messageIDs, conversationIDs, senderIDs, contents, timestamps, err
 }
 
 // delete a message from a conversation
 func (db *appdbimpl) DeleteMessage(messageID string) error {
-	db.CheckConversationsTable()
-	_, err := db.c.Exec("DELETE FROM messages_table WHERE message_id = ?", messageID)
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return err
+	}
+	_, err = db.c.Exec("DELETE FROM messages_table WHERE message_id = ?", messageID)
 	return err
 }
 
 // get information about a message
 func (db *appdbimpl) GetMessageInfo(messageID string, userID string) (string, string, string, string, string, bool, error) {
-	db.CheckConversationsTable()
-
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return "", "", "", "", "", false, err
+	}
 	var is_forwarded bool
 	var conversationID, senderID, content, timestamp string
-	err := db.c.QueryRow("SELECT conversation_id, sender_id, content, timestamp, is_forwarded FROM messages_table WHERE message_id = ?", messageID).Scan(&conversationID, &senderID, &content, &timestamp, &is_forwarded)
+	err = db.c.QueryRow("SELECT conversation_id, sender_id, content, timestamp, is_forwarded FROM messages_table WHERE message_id = ?", messageID).Scan(&conversationID, &senderID, &content, &timestamp, &is_forwarded)
 	if err != nil {
 		return "", "", "", "", "", false, err
 	}
@@ -307,7 +347,10 @@ func (db *appdbimpl) GetMessageInfo(messageID string, userID string) (string, st
 
 // get messages from a conversation
 func (db *appdbimpl) GetConversationMessages(conversationID string) ([]string, []string, []string, []string, []string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	rows, err := db.c.Query("SELECT message_id, conversation_id, sender_id, content, timestamp FROM messages_table WHERE conversation_id = ?", conversationID)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
@@ -335,14 +378,22 @@ func (db *appdbimpl) GetConversationMessages(conversationID string) ([]string, [
 		contents = append(contents, content)
 		timestamps = append(timestamps, timestamp)
 	}
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
 	return messageIDs, conversationIDs, senderIDs, contents, timestamps, err
 }
 
 // get the last message from a conversation, along with the sender and the timestamp.
 // this is used for the preview of the conversation.
 func (db *appdbimpl) GetLastMessage(conversationID string) (string, string, string, string, error) {
-	db.CheckConversationsTable()
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return "", "", "", "", err
+	}
 	var messageID, senderID, timestamp, content string
-	err := db.c.QueryRow("SELECT message_id, sender_id, timestamp, content FROM messages_table WHERE conversation_id = ? ORDER BY timestamp DESC LIMIT 1", conversationID).Scan(&messageID, &senderID, &timestamp, &content)
+	err = db.c.QueryRow("SELECT message_id, sender_id, timestamp, content FROM messages_table WHERE conversation_id = ? ORDER BY timestamp DESC LIMIT 1", conversationID).Scan(&messageID, &senderID, &timestamp, &content)
 	return content, messageID, senderID, timestamp, err
 }

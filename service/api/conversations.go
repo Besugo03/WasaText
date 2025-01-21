@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -360,8 +359,6 @@ func (rt *_router) UpdateConversationPhoto(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Failed to get conversation info", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("current isGroup value : ", isGroup)
 
 	err = rt.db.UpdateConversation(req.ConversationID, isGroup, "", req.Photo)
 	if err != nil {
