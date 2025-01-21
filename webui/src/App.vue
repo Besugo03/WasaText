@@ -19,10 +19,16 @@ export default {
 			conversationDetails: null,
 			userEntries: [],
 			token: null,
+			pollingInterval: 3000,
+			pollingTimer: null,
 		};
 	},
 
 	methods: {
+		navigateToChat(conversationID) {
+			this.$router.push(`/chat/${conversationID}`);
+		},
+
 		async getToken() {
 			this.loading = true;
 			this.errormsg = null;
@@ -31,7 +37,7 @@ export default {
 					"/session",
 					{
 						// some params
-						username: "diuk",
+						username: this.$username,
 					},
 					{
 						headers: {
@@ -90,6 +96,7 @@ export default {
 
 		// this gets called for each conversation, and gives back a freshly-baked user-entry object, just how the component wants it.
 		async initializeUserEntry(conversationDetails) {
+			console.log(conversationDetails);
 			// our user-entry expect 3 props: imageUrl, username, lastText
 			// The conditions are as follows:
 			// we get is_group from the conversationDetails object
@@ -133,7 +140,7 @@ export default {
 				conversationImage =
 					"https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.vecteezy.com%2Fsystem%2Fresources%2Fpreviews%2F004%2F141%2F669%2Foriginal%2Fno-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg&f=1&nofb=1&ipt=93ff810ba334bbdf63f2253d5d5cda42742059f5549d3f6c058d10ad55a79084&ipo=images";
 			}
-			console.log(conversationImage);
+			// console.log(conversationImage);
 
 			// for the username:
 			// if the conversation is a group, we use the group name
@@ -159,7 +166,7 @@ export default {
 					conversationUsername = otherUser;
 				}
 			}
-			console.log(conversationUsername);
+			// console.log(conversationUsername);
 
 			// for the last text:
 			// it's really the same. We already get the last text and its details all ready from the conversationDetails object.
@@ -168,48 +175,83 @@ export default {
 			// P.S. the name is whatever is before the first space from the user's name.
 
 			let conversationLastText;
-			if (conversationDetails.is_group) {
+			if (conversationDetails.isGroup) {
 				let lastMessageContent =
 					conversationDetails.lastMessage.content;
 				let sender =
 					conversationDetails.lastMessage.sender.split(" ")[0];
-				conversationLastText = `${sender} : ${lastMessage}`;
+				console.log("sender from group : " + sender);
+				conversationLastText = `${sender} : ${lastMessageContent}`;
 			} else {
 				conversationLastText = conversationDetails.lastMessage.content;
 			}
-			console.log(conversationLastText);
+			// console.log(conversationLastText);
+
+			// get the time of the last message
+			let lastMessageTime = conversationDetails.lastMessage.timestamp;
+
+			// converastionID which the component needs to redirect to the correct chat
+			let conversationID = conversationDetails.conversationId;
 
 			return {
 				imageUrl: conversationImage,
 				username: conversationUsername,
 				lastText: conversationLastText,
+				timestamp: lastMessageTime,
+				conversationID: conversationID,
 			};
+		},
+
+		async refreshConversations() {
+			await this.getToken();
+			console.log(this.token);
+			await this.getConversationIDs();
+			console.log(JSON.stringify(this.conversationIDs));
+
+			// for each conversation ID, get the conversation details. saving it all in a temporary object.
+			let retrievedConversationDetails = {};
+			for (let conversationID of this.conversationIDs) {
+				let details = await this.getConversationDetails(conversationID);
+				retrievedConversationDetails[conversationID] = details;
+			}
+			console.log(JSON.stringify(retrievedConversationDetails));
+
+			this.conversationDetails = retrievedConversationDetails;
+			// for each conversation, initialize a user-entry object.
+			for (let conversationID in this.conversationDetails) {
+				let conversationDetails =
+					this.conversationDetails[conversationID];
+				let userEntry = await this.initializeUserEntry(
+					conversationDetails
+				);
+				this.userEntries.push(userEntry);
+			}
+
+			// sort the user entries by timestamp, by most recent. (the format is a string yyyy-mm-dd hh:mm:ss)
+			this.userEntries.sort(
+				(a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+			);
+		},
+
+		async handleLogin(username) {
+			this.$username = username;
+			// clear the previous user entries
+			this.userEntries = [];
+			await this.refreshConversations();
+			this.$router.push("/openedchat");
 		},
 	},
 
 	// mounted is a lifecycle hook that runs after the component has been added to the DOM
 	// we will use it to get the token, but we need to make the function async to use await.
 	async mounted() {
-		this.$username = "diuk";
-		await this.getToken();
-		console.log(this.token);
-		await this.getConversationIDs();
-		console.log(JSON.stringify(this.conversationIDs));
+		await this.refreshConversations();
+	},
 
-		// for each conversation ID, get the conversation details. saving it all in a temporary object.
-		let retrievedConversationDetails = {};
-		for (let conversationID of this.conversationIDs) {
-			let details = await this.getConversationDetails(conversationID);
-			retrievedConversationDetails[conversationID] = details;
-		}
-		console.log(JSON.stringify(retrievedConversationDetails));
-		this.conversationDetails = retrievedConversationDetails;
-		// for each conversation, initialize a user-entry object.
-		for (let conversationID in this.conversationDetails) {
-			let conversationDetails = this.conversationDetails[conversationID];
-			let userEntry = await this.initializeUserEntry(conversationDetails);
-			this.userEntries.push(userEntry);
-		}
+	// beforeDestroy is a lifecycle hook that runs before the component is destroyed
+	// we will use it to clear the interval we set up in mounted.
+	beforeDestroy() {
+		clearInterval(this.pollingTimer);
 	},
 };
 </script>
@@ -239,7 +281,8 @@ export default {
 			<div class="row">
 				<nav
 					id="sidebarMenu"
-					class="col-md-3 col-lg-3 d-md-block bg-dark sidebar collapse"
+					class="d-md-block bg-dark sidebar collapse w-auto"
+					style="border-top-right-radius: 1rem"
 				>
 					<div class="position-sticky pt-3 sidebar-sticky">
 						<h6
@@ -249,13 +292,13 @@ export default {
 						</h6>
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<RouterLink to="/" class="nav-link">
+								<RouterLink to="/" class="nav-link text-light">
 									<svg class="feather">
 										<use
-											href="/feather-sprite-v4.29.0.svg#home"
+											href="/feather-sprite-v4.29.0.svg#key"
 										/>
 									</svg>
-									Home
+									Change user
 								</RouterLink>
 							</li>
 							<li class="nav-item">
@@ -292,25 +335,22 @@ export default {
 							<span>Your chats</span>
 						</h6>
 
-						<!-- <user-entry
-							image-url="https://data.ibtimes.sg/en/full/78663/luigi-mangione.jpg?w=713"
-							username="Luigi Mangione"
-							last-text="Ao pisé esci nattimo"
-						></user-entry>
-						<user-entry
-							image-url="https://i.imgur.com/KK8XZRq.png"
-							username="Silly Diuk"
-							last-text="📷 so 40 ar grammo. quindi?"
-						></user-entry> -->
-
 						<!-- create an user entry for each one we prepared earlier -->
 						<user-entry
-							v-for="(conversation, index) in this.userEntries"
+							v-for="(conversation, index) in userEntries"
 							:key="index"
 							:imageUrl="conversation.imageUrl"
 							:username="conversation.username"
 							:lastText="conversation.lastText"
+							:timestamp="conversation.timestamp"
+							:conversationID="conversation.conversationID"
+							@open-conversation="navigateToChat"
 						></user-entry>
+						<div v-if="!userEntries || userEntries.length === 0">
+							<h5 class="text-light fw-bold p-3 bg-secondary">
+								No chats yet. Please log in.
+							</h5>
+						</div>
 
 						<ul class="nav flex-column">
 							<li class="nav-item">
@@ -332,7 +372,7 @@ export default {
 
 				<!-- here goes the main screen -->
 				<main class="col-md-9 ms-sm-auto col-lg-9 px-md-4">
-					<RouterView />
+					<RouterView @login="handleLogin" />
 				</main>
 			</div>
 		</div>
