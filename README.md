@@ -1,12 +1,26 @@
-# Fantastic coffee (decaffeinated)
+# WASApp (WASAtext)
+
+My entry for the 2024/2025 WASA course project.
+
+* WASApp is a chatting app, with GO backend, Vue frontend and thorough API documentation through OpenAPI standards, following the IBM-openapi ruleset.
+
+## Notes on the implementation
+
+- No images are stored in the database. Every image is rendered from an URL.
+  - If an image is already on the internet, why would i need to copy it again on my database when I can use someone else's?
+  - This gets rid of a lot of headaches with formats, size limits etc... when creating the app
+  - This gives users freedom to host their images on whatever sites they prefer, giving them no limits on their resolution
+    - From a privacy perspective, if the user hosts their own images, it means they are free to shut them down, leaving no trace of them in the database, other than their URLs, which at that point result to nothing.
+
+## General structure
+
+#### Fantastic coffee (decaffeinated)
 
 This repository contains the basic structure for [Web and Software Architecture](http://gamificationlab.uniroma1.it/en/wasa/) homework project.
-It has been described in class.
 
-"Fantastic coffee (decaffeinated)" is a simplified version for the WASA course, not suitable for a production environment.
-The full version can be found in the "Fantastic Coffee" repository.
+"Fantastic coffee (decaffeinated)" is not suited for production environments.
 
-## Project structure
+###### Project structure
 
 * `cmd/` contains all executables; Go programs here should only do "executable-stuff", like reading options from the CLI/env, etc.
 	* `cmd/healthcheck` is an example of a daemon for checking the health of servers daemons; useful when the hypervisor is not providing HTTP readiness/liveness probes (e.g., Docker engine)
@@ -26,7 +40,7 @@ The full version can be found in the "Fantastic Coffee" repository.
 Other project files include:
 * `open-node.sh` starts a new (temporary) container using `node:20` image for safe and secure web frontend development (you don't want to use `node` in your system, do you?).
 
-## Go vendoring
+###### Go vendoring
 
 This project uses [Go Vendoring](https://go.dev/ref/mod#vendoring). You must use `go mod vendor` after changing some dependency (`go get` or `go mod tidy`) and add all files under `vendor/` directory in your commit.
 
@@ -35,13 +49,13 @@ For more information about vendoring:
 * https://go.dev/ref/mod#vendoring
 * https://www.ardanlabs.com/blog/2020/04/modules-06-vendoring.html
 
-## Node/YARN vendoring
+###### Node/YARN vendoring
 
 This repository uses `yarn` and a vendoring technique that exploits the ["Offline mirror"](https://yarnpkg.com/features/caching). As for the Go vendoring, the dependencies are inside the repository.
 
 You should commit the files inside the `.yarn` directory.
 
-## How to set up a new project from this template
+###### How to set up a new project from this template
 
 You need to:
 
@@ -52,7 +66,7 @@ You need to:
 * Update the code in `run()` function (`cmd/webapi/main.go`) to connect to databases or external resources
 * Write API code inside `service/api`, and create any further package inside `service/` (or subdirectories)
 
-## How to build
+###### How to build
 
 If you're not using the WebUI, or if you don't want to embed the WebUI into the final executable, then:
 
@@ -71,7 +85,7 @@ exit
 go build -tags webui ./cmd/webapi/
 ```
 
-## How to run (in development mode)
+###### How to run (in development mode)
 
 You can launch the backend only using:
 
@@ -87,7 +101,7 @@ If you want to launch the WebUI, open a new tab and launch:
 yarn run dev
 ```
 
-## How to build for production / homework delivery
+###### How to build for production / homework delivery
 
 ```shell
 ./open-node.sh
@@ -97,9 +111,9 @@ yarn run build-prod
 
 For "Web and Software Architecture" students: before committing and pushing your work for grading, please read the section below named "My build works when I use `yarn run dev`, however there is a Javascript crash in production/grading"
 
-## Known issues
+###### Known issues
 
-### My build works when I use `yarn run dev`, however there is a Javascript crash in production/grading
+###### My build works when I use `yarn run dev`, however there is a Javascript crash in production/grading
 
 Some errors in the code are somehow not shown in `vite` development mode. To preview the code that will be used in production/grading settings, use the following commands:
 
@@ -110,6 +124,6 @@ yarn run build-prod
 yarn run preview
 ```
 
-## License
+###### License
 
 See [LICENSE](LICENSE).

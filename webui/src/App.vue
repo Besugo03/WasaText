@@ -37,7 +37,7 @@ export default {
 					"/session",
 					{
 						// some params
-						username: this.$username,
+						username: this.$username.value,
 					},
 					{
 						headers: {
@@ -46,7 +46,7 @@ export default {
 					}
 				);
 				this.token = response.data.identifier;
-				// console.log(this.token);
+				this.$token.value = this.token;
 			} catch (e) {
 				this.errormsg = e.toString();
 			}
@@ -96,7 +96,6 @@ export default {
 
 		// this gets called for each conversation, and gives back a freshly-baked user-entry object, just how the component wants it.
 		async initializeUserEntry(conversationDetails) {
-			console.log(conversationDetails);
 			// our user-entry expect 3 props: imageUrl, username, lastText
 			// The conditions are as follows:
 			// we get is_group from the conversationDetails object
@@ -119,9 +118,8 @@ export default {
 					let chatParticipants = conversationDetails.participants;
 					// remove yourself from the list of participants
 					let otherUser = chatParticipants.filter(
-						(user) => user != this.$username
+						(user) => user != this.$username.value
 					)[0];
-					// console.log(otherUser);
 
 					// query the database for the user's image
 					let response = await this.$axios.get(
@@ -140,7 +138,6 @@ export default {
 				conversationImage =
 					"https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.vecteezy.com%2Fsystem%2Fresources%2Fpreviews%2F004%2F141%2F669%2Foriginal%2Fno-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg&f=1&nofb=1&ipt=93ff810ba334bbdf63f2253d5d5cda42742059f5549d3f6c058d10ad55a79084&ipo=images";
 			}
-			// console.log(conversationImage);
 
 			// for the username:
 			// if the conversation is a group, we use the group name
@@ -160,13 +157,12 @@ export default {
 					let chatParticipants = conversationDetails.participants;
 					// remove yourself from the list of participants
 					let otherUser = chatParticipants.filter(
-						(user) => user != this.$username
+						(user) => user != this.$username.value
 					)[0];
 
 					conversationUsername = otherUser;
 				}
 			}
-			// console.log(conversationUsername);
 
 			// for the last text:
 			// it's really the same. We already get the last text and its details all ready from the conversationDetails object.
@@ -180,12 +176,10 @@ export default {
 					conversationDetails.lastMessage.content;
 				let sender =
 					conversationDetails.lastMessage.sender.split(" ")[0];
-				console.log("sender from group : " + sender);
 				conversationLastText = `${sender} : ${lastMessageContent}`;
 			} else {
 				conversationLastText = conversationDetails.lastMessage.content;
 			}
-			// console.log(conversationLastText);
 
 			// get the time of the last message
 			let lastMessageTime = conversationDetails.lastMessage.timestamp;
@@ -204,9 +198,9 @@ export default {
 
 		async refreshConversations() {
 			await this.getToken();
-			console.log(this.token);
+			console.log("logged in. Token: " + this.token);
 			await this.getConversationIDs();
-			console.log(JSON.stringify(this.conversationIDs));
+			// console.log(JSON.stringify(this.conversationIDs));
 
 			// for each conversation ID, get the conversation details. saving it all in a temporary object.
 			let retrievedConversationDetails = {};
@@ -214,7 +208,6 @@ export default {
 				let details = await this.getConversationDetails(conversationID);
 				retrievedConversationDetails[conversationID] = details;
 			}
-			console.log(JSON.stringify(retrievedConversationDetails));
 
 			this.conversationDetails = retrievedConversationDetails;
 			// for each conversation, initialize a user-entry object.
@@ -234,11 +227,11 @@ export default {
 		},
 
 		async handleLogin(username) {
-			this.$username = username;
+			this.$username.value = username;
 			// clear the previous user entries
 			this.userEntries = [];
 			await this.refreshConversations();
-			this.$router.push("/openedchat");
+			this.$router.push("/welcomescreen");
 		},
 	},
 
@@ -346,15 +339,30 @@ export default {
 							:conversationID="conversation.conversationID"
 							@open-conversation="navigateToChat"
 						></user-entry>
-						<div v-if="!userEntries || userEntries.length === 0">
+						<div
+							v-if="
+								(!userEntries || userEntries.length === 0) &&
+								$username.value === ''
+							"
+						>
 							<h5 class="text-light fw-bold p-3 bg-secondary">
 								No chats yet. Please log in.
+							</h5>
+						</div>
+						<div
+							v-if="
+								(!userEntries || userEntries.length === 0) &&
+								$username.value !== ''
+							"
+						>
+							<h5 class="text-light fw-semibold p-3 bg-secondary">
+								start a chat, {{ $username }}!
 							</h5>
 						</div>
 
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<RouterLink
+								<!-- <RouterLink
 									:to="'/some/' + 'variable_here' + '/path'"
 									class="nav-link text-light"
 								>
@@ -364,14 +372,14 @@ export default {
 										/>
 									</svg>
 									Item 1
-								</RouterLink>
+								</RouterLink> -->
 							</li>
 						</ul>
 					</div>
 				</nav>
 
 				<!-- here goes the main screen -->
-				<main class="col-md-9 ms-sm-auto col-lg-9 px-md-4">
+				<main class="col-md-9 ms-sm-auto col-lg-9 px-md-4 h-100">
 					<RouterView @login="handleLogin" />
 				</main>
 			</div>

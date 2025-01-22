@@ -9,10 +9,12 @@ import './assets/dashboard.css'
 import './assets/main.css'
 
 const username = reactive({value: ''});
+const token = reactive({value: ''});
 
 const app = createApp(App)
 app.config.globalProperties.$axios = axios;
 app.config.globalProperties.$username = username;
+app.config.globalProperties.$token = token;
 app.component("ErrorMsg", ErrorMsg);
 app.component("LoadingSpinner", LoadingSpinner);
 app.use(router)
