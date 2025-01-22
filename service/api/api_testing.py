@@ -370,11 +370,11 @@ if __name__ == "__main__":
     # test_getConversations(user2)
     # test_getConversations(user3)
 
-    # test_createConversation_withDiuk(user7)
-    # test_getConversationInfo(user3, "3")
+    test_createConversation_withDiuk(user7)
+    test_getConversationInfo(user3, "1")
 
-    # test_sendMessage(user1, "1", "Salvatore fautore piazza buste spesa", False)
-    # test_sendMessage(user7, "5", "hey pretty boy", False)
+    # test_sendMessage(user1, "1", "Salvatore fautore piazza buste spesa carrarmati", False)
+    # test_sendMessage(user7, "5", "sn riccardo", False)
 
     # test_removeParticipant(user1, "1", "diuk")
     # test_removeParticipant(user3, "2", "newTestUser")
@@ -389,8 +389,8 @@ if __name__ == "__main__":
     # test_forwardMessage(user1, "1", "1")
     # test_deleteMessage(user1, "1")
 
-    # test_changePicture(user1, "https://media.tenor.com/lll_dEVH2s4AAAAi/nagatoro-nekotoro.gif")
-    # test_changePicture(user7, "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fendaven%2Fimages%2Fe%2Fe3%2FAstolfo_pfp.jpg%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230429063130&f=1&nofb=1&ipt=e5769024e356248b7d6a8924486200bad278ece3959877e74e07ab8799a38f8d&ipo=images")
+    test_changePicture(user3, "https://media.tenor.com/lll_dEVH2s4AAAAi/nagatoro-nekotoro.gif")
+    test_changePicture(user7, "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fendaven%2Fimages%2Fe%2Fe3%2FAstolfo_pfp.jpg%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230429063130&f=1&nofb=1&ipt=e5769024e356248b7d6a8924486200bad278ece3959877e74e07ab8799a38f8d&ipo=images")
     # test_changeUsername(user1, "bobbolino")
 
     # test_changeGroupPhoto(user1, "1", "https://i.imgur.com/GROUPtest")

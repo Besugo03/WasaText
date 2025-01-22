@@ -83,6 +83,11 @@ export default {
 		// Emit the user entry event
 		convertTimestamp(timestamp) {
 			const date = new Date(timestamp);
+			// if the date is NaN, return a default string.
+			// (this is the case where you don't have any messages in the convo yet.)
+			if (isNaN(date)) {
+				return "start chatting!";
+			}
 			// if the date is today, return the time
 			if (
 				date.getDate() === new Date().getDate() &&
