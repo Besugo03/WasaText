@@ -1,8 +1,8 @@
 <template>
 	<!-- make the user entry take up the whole space of its container -->
-	<div class="w-100 nav-item">
+	<div class="nav-item w-100">
 		<button
-			class="nav-link w-100 d-flex p-2 rounded border-0"
+			class="nav-link d-flex p-2 rounded border-0 w-100"
 			@mouseover="isFocused = true"
 			@mouseleave="isFocused = false"
 			:class="{ 'bg-dark': !isFocused, 'bg-secondary': isFocused }"
@@ -19,12 +19,9 @@
 			/>
 			<!-- username  and last text -->
 			<div
-				class="ms-3 d-flex flex-column justify-content-evenly text-light"
+				class="ms-3 d-flex flex-column justify-content-evenly text-light overflow-auto w-100"
 			>
-				<div
-					class="d-flex flex-row justify-content-between"
-					style="width: 200px"
-				>
+				<div class="d-flex flex-row justify-content-between">
 					<h5
 						class="mb-0 fw-semibold align-self-start text-light text-start text-truncate"
 					>
@@ -35,8 +32,7 @@
 						{{ convertTimestamp(timestamp) }}
 					</div>
 				</div>
-				<!-- limit the width to 90% of its container (not its contents) -->
-				<div style="width: 200px">
+				<div class="d-flex w-100">
 					<p
 						class="mb-0 align-self-start text-light text-start text-truncate"
 					>

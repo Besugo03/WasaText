@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
     # test_createConversation_withDiuk(user7)
 
-    # test_sendMessage(user1, "1", "Salvatore fautore piazza buste spesa carrarmati", False)
+    # test_sendMessage(user3, "1", "Ciao riccardo", False)
     # test_sendMessage(user7, "1", "sn riccardo secondo messaggio prima convo", False)
     # test_getConversationInfo(user3, "1")
 

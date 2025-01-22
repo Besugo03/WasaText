@@ -254,9 +254,7 @@ export default {
 		<header
 			class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"
 		>
-			<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#/"
-				>Example App</a
-			>
+			<a class="navbar-brand me-0 px-3 fs-6" href="#/">Example App</a>
 			<button
 				class="navbar-toggler position-absolute d-md-none collapsed"
 				type="button"
@@ -274,7 +272,7 @@ export default {
 			<div class="row">
 				<nav
 					id="sidebarMenu"
-					class="d-md-block bg-dark sidebar collapse w-auto"
+					class="d-md-block bg-dark sidebar collapse col-md-3 col-lg-2"
 					style="border-top-right-radius: 1rem"
 				>
 					<div class="position-sticky pt-3 sidebar-sticky">
@@ -379,7 +377,7 @@ export default {
 				</nav>
 
 				<!-- here goes the main screen -->
-				<main class="col-md-9 ms-sm-auto col-lg-9 px-md-4 h-100">
+				<main class="col-md-9 col-lg-10 ms-sm-auto px-md-4 h-100">
 					<RouterView @login="handleLogin" />
 				</main>
 			</div>

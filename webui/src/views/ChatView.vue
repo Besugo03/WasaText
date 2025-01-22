@@ -1,5 +1,9 @@
 <script>
+import DiscordMessage from "./DiscordMessage.vue";
 export default {
+	components: {
+		DiscordMessage,
+	},
 	mounted() {
 		const chatID = this.$route.params.id;
 		console.log(`Chat ID: ${chatID}`);
@@ -86,8 +90,19 @@ export default {
 </script>
 
 <template>
-	<div class="chat-wrapper vh-100 d-flex flex-column">
+	<div class="chat-wrapper d-flex flex-column">
 		{{ conversationInfo }}
+		<DiscordMessage
+			username="John Doe"
+			user-picture="https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg"
+			timestamp="9:42 AM"
+			:is-forwarded="false"
+		>
+			Hello, this is a forwarded message.
+			<img
+				src="https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg"
+			/>
+		</DiscordMessage>
 		<div
 			class="flex-grow-1 overflow-auto d-flex flex-column justify-content-end"
 			style="min-height: 0"
@@ -97,7 +112,7 @@ export default {
 				:key="message.id"
 				class="d-flex justify-content-start"
 			>
-				<div class="bg-light p-2 rounded m-2">
+				<div class="bg-secondary bg-opacity-50 p-2 rounded m-2">
 					{{ message.content }}
 				</div>
 			</div>
