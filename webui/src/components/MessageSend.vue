@@ -9,7 +9,7 @@
 					<textarea
 						ref="messageInput"
 						v-model="messageText"
-						class="form-control form-control-lg form-control-dark"
+						class="form-control form-control-lg form-control-dark bg-dark text-white"
 						placeholder="Type a message..."
 						rows="1"
 						@keydown.enter.exact.prevent="sendMessage"

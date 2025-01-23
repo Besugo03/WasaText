@@ -1,7 +1,13 @@
 <script>
 import DiscordMessage from "./DiscordMessage.vue";
 import MessageSend from "../components/MessageSend.vue";
+import { inject } from "vue";
 export default {
+	inject: ["refreshTrigger"],
+	setup() {
+		// refreshtrigger
+		// const refreshTrigger = inject("refreshTrigger");
+	},
 	components: {
 		DiscordMessage,
 		MessageSend,
@@ -13,7 +19,9 @@ export default {
 		this.messages = [];
 		this.MessageEntries = [];
 		this.refreshChat();
+		// listen to the new-messages event from app.vue
 	},
+	beforeUnmount() {},
 	data() {
 		return {
 			chatID: this.$route.params.id,
@@ -24,6 +32,10 @@ export default {
 		};
 	},
 	watch: {
+		refreshTrigger() {
+			console.log("ChatView refreshTriggered");
+			this.refreshChat();
+		},
 		$route(to, from) {
 			this.chatID = to.params.id;
 			console.log(`Chat ID: ${this.chatID}`);

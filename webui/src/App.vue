@@ -1,10 +1,17 @@
-<script setup>
-import { RouterLink, RouterView } from "vue-router";
-import UserEntry from "./components/UserEntry.vue";
-</script>
+<script setup></script>
+
 <script>
+import { RouterLink, RouterView } from "vue-router";
+import { ref, provide } from "vue";
+import UserEntry from "./components/UserEntry.vue";
 export default {
 	components: { UserEntry },
+
+	setup() {
+		const refreshTrigger = ref(0);
+		provide("refreshTrigger", refreshTrigger);
+		return { refreshTrigger };
+	},
 
 	// in the data, we will save our conversations.
 	data() {
@@ -25,6 +32,16 @@ export default {
 	},
 
 	methods: {
+		startPolling() {
+			console.log("Starting polling");
+			this.pollingTimer = setInterval(async () => {
+				if (!this.loading) {
+					// Prevent overlapping requests
+					await this.refreshConversations();
+					console.log("Polling for new messages");
+				}
+			}, this.pollingInterval);
+		},
 		navigateToChat(conversationID) {
 			this.$router.push(`/chat/${conversationID}`);
 		},
@@ -32,6 +49,15 @@ export default {
 		async getToken() {
 			this.loading = true;
 			this.errormsg = null;
+			if (this.$username.value === "") {
+				console.log("No username set");
+				this.loading = false;
+				return;
+			}
+			if (this.$token.value) {
+				console.log("Token already exists: " + this.$token.value);
+				return;
+			}
 			try {
 				let response = await this.$axios.post(
 					"/session",
@@ -60,7 +86,7 @@ export default {
 			try {
 				let response = await this.$axios.get(`/conversations`, {
 					headers: {
-						Authorization: `Bearer ${this.token}`,
+						Authorization: `Bearer ${this.$token.value}`,
 					},
 				});
 				this.conversationIDs = response.data.conversations;
@@ -82,7 +108,7 @@ export default {
 					`/conversations/info/${conversationID}`,
 					{
 						headers: {
-							Authorization: `Bearer ${this.token}`,
+							Authorization: `Bearer ${this.$token.value}`,
 						},
 					}
 				);
@@ -126,7 +152,7 @@ export default {
 						`/users/photo/${otherUser}`,
 						{
 							headers: {
-								Authorization: `Bearer ${this.token}`,
+								Authorization: `Bearer ${this.$token.value}`,
 							},
 						}
 					);
@@ -163,6 +189,9 @@ export default {
 					conversationUsername = otherUser;
 				}
 			}
+			if (conversationUsername == "") {
+				conversationUsername = "No name conversation";
+			}
 
 			// for the last text:
 			// it's really the same. We already get the last text and its details all ready from the conversationDetails object.
@@ -198,7 +227,11 @@ export default {
 
 		async refreshConversations() {
 			await this.getToken();
-			console.log("logged in. Token: " + this.token);
+			if (!this.$token.value) {
+				console.log("No token set");
+				return;
+			}
+			console.log("logged in. Token: " + this.$token.value);
 			await this.getConversationIDs();
 			// console.log(JSON.stringify(this.conversationIDs));
 
@@ -209,6 +242,8 @@ export default {
 				retrievedConversationDetails[conversationID] = details;
 			}
 
+			let retrievedEntries = [];
+
 			this.conversationDetails = retrievedConversationDetails;
 			// for each conversation, initialize a user-entry object.
 			for (let conversationID in this.conversationDetails) {
@@ -217,32 +252,58 @@ export default {
 				let userEntry = await this.initializeUserEntry(
 					conversationDetails
 				);
-				this.userEntries.push(userEntry);
+				retrievedEntries.push(userEntry);
 			}
 
 			// sort the user entries by timestamp, by most recent. (the format is a string yyyy-mm-dd hh:mm:ss)
-			this.userEntries.sort(
+			retrievedEntries.sort(
 				(a, b) => new Date(b.timestamp) - new Date(a.timestamp)
 			);
+
+			// console.log(
+			// 	"Retrieved entries: " + JSON.stringify(retrievedEntries)
+			// );
+			// console.log("User entries: " + JSON.stringify(this.userEntries));
+			// if the user entries are different from the retrieved entries, update the user entries.
+
+			if (
+				JSON.stringify(this.userEntries) !==
+				JSON.stringify(retrievedEntries)
+			) {
+				console.log("New messages!");
+				this.userEntries = [];
+				this.userEntries = retrievedEntries;
+				this.refreshTrigger++;
+				console.log("refreshTrigger value : " + this.refreshTrigger);
+			} else {
+				console.log("No new messages...");
+			}
+			return this.userEntries;
 		},
 
 		async handleLogin(username) {
 			this.$username.value = username;
 			// clear the previous user entries
 			this.userEntries = [];
-			await this.refreshConversations();
-			this.$router.push("/welcomescreen");
+			await this.refreshConversations().then(() => {
+				console.log("Navigating to welcome screen");
+				this.$router.push("/welcomescreen");
+			});
 		},
 	},
 
 	// mounted is a lifecycle hook that runs after the component has been added to the DOM
 	// we will use it to get the token, but we need to make the function async to use await.
 	async mounted() {
-		await this.refreshConversations();
+		// await this.refreshConversations();
+		this.startPolling();
 	},
 
 	beforeUnmount() {
-		clearInterval(this.pollingTimer);
+		if (this.pollingTimer) {
+			clearInterval(this.pollingTimer);
+			this.pollingTimer = null;
+		}
 	},
 };
 </script>
@@ -253,27 +314,61 @@ export default {
 			class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"
 			style="height: 3.5rem"
 		>
-			<a class="navbar-brand me-0 px-3 fs-6" href="#/">
-				WASApp
-				<img
-					src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F8708%2F8708467.png&f=1&nofb=1&ipt=37149496808e91dee11682f8051a4a4c27dd377f3033d141398e7f5a86805d27&ipo=images"
-					width="30"
-					class=""
-				/>
-			</a>
-			<button
-				class="navbar-toggler position-absolute d-md-none collapsed"
-				type="button"
-				data-bs-toggle="collapse"
-				data-bs-target="#sidebarMenu"
-				aria-controls="sidebarMenu"
-				aria-expanded="false"
-				aria-label="Toggle navigation"
+			<div
+				class="d-flex flex-row align-items-center justify-content-between w-100"
 			>
-				<span class="navbar-toggler-icon"></span>
-			</button>
+				<a class="navbar-brand me-0 px-3 fs-6" href="#/">
+					WASApp
+					<img
+						src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F8708%2F8708467.png&f=1&nofb=1&ipt=37149496808e91dee11682f8051a4a4c27dd377f3033d141398e7f5a86805d27&ipo=images"
+						width="30"
+						class=""
+					/>
+				</a>
+				<!-- if the current path (link) ends with "chat/NUMBER", display the div -->
+				<div
+					v-if="$route.path.split('/')[1] === 'chat'"
+					class="d-flex flex-row align-items-center"
+				>
+					<!-- show an img with the current conversation -->
+					<img
+						:src="
+							userEntries.find(
+								(entry) =>
+									entry.conversationID === $route.params.id
+							).imageUrl
+						"
+						class="rounded-circle"
+						alt="avatar-icon"
+						width="30"
+						height="30"
+						style="object-fit: cover"
+					/>
+					<!-- show the username of the current conversation -->
+					<h5 class="text-light fw-semibold ms-3 mb-0">
+						{{
+							userEntries.find(
+								(entry) =>
+									entry.conversationID === $route.params.id
+							).username
+						}}
+					</h5>
+				</div>
+				<!-- empty div to center the current chat -->
+				<div></div>
+				<button
+					class="navbar-toggler position-absolute d-md-none collapsed"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#sidebarMenu"
+					aria-controls="sidebarMenu"
+					aria-expanded="false"
+					aria-label="Toggle navigation"
+				>
+					<span class="navbar-toggler-icon"></span>
+				</button>
+			</div>
 		</header>
-
 		<div class="container-fluid">
 			<div class="row">
 				<nav
