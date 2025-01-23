@@ -225,13 +225,13 @@ export default {
 }
 
 .inline-image {
-	height: 2rem;
+	height: 1.5rem;
 	vertical-align: middle;
 	margin: 0 0.1em;
 	display: inline-block;
 	border-radius: 2px;
 	object-fit: contain;
-	max-height: 1.5em;
+	/* max-height: 1.5em; */
 }
 
 .hover-bg:hover {
