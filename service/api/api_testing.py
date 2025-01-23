@@ -153,14 +153,11 @@ def test_forwardMessage(userID, conversationID, messageID):
         print("Response:", response.text)
 
 def test_deleteMessage(userID, messageID):
-    url = f"{BASE_URL}/conversations/message"
-    data = {
-        "message_id": messageID,
-    }
+    url = f"{BASE_URL}/conversations/message/delete/{messageID}"
     headers = {
         "Authorization" : "Bearer " + userID,
     }
-    response = requests.delete(url, json=data, headers=headers)
+    response = requests.delete(url, headers=headers)
     if response.status_code == 200 or response.status_code == 201 or response.status_code == 204:
         print("Delete Message Test Passed")
         print("Response:", response.text)
@@ -356,14 +353,12 @@ if __name__ == "__main__":
     user1 = test_login("bobbolino")
     user2 = test_login("besugo")
     user3 = test_login("diuk")
-    user4 = test_login("pinselo")
     user4 = test_login("vi")
     user5 = test_login("johnny")
     user6 = test_login("panam")
     user7 = test_login("riccardo")
 
     # test_getAllUsers(user1)
-    # test_getUserExistence(user1, "pinselo")
     # test_getUserExistence(user1, "diuk")
 
     # test_getConversations(user1)
@@ -372,8 +367,9 @@ if __name__ == "__main__":
 
     # test_createConversation_withDiuk(user7)
 
-    # test_sendMessage(user3, "1", "Ciao riccardo", False)
-    # test_sendMessage(user7, "1", "sn riccardo secondo messaggio prima convo", False)
+    for i in range (1, 10):
+        test_sendMessage(user7, "1", f"messaggio di test numero {i}", False)
+    # test_sendMessage(user3, "1", "https://i.imgflip.com/1m36cf.jpg", False)
     # test_getConversationInfo(user3, "1")
 
     # test_removeParticipant(user1, "1", "diuk")
@@ -387,7 +383,7 @@ if __name__ == "__main__":
     # test_getMessageInfo(user3, "4") # questo setta il determinato messaggio come letto.
 
     # test_forwardMessage(user1, "1", "1")
-    # test_deleteMessage(user1, "1")
+    # test_deleteMessage(user3, "5")
 
     # test_changePicture(user3, "https://media.tenor.com/lll_dEVH2s4AAAAi/nagatoro-nekotoro.gif")
     # test_changePicture(user7, "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fendaven%2Fimages%2Fe%2Fe3%2FAstolfo_pfp.jpg%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230429063130&f=1&nofb=1&ipt=e5769024e356248b7d6a8924486200bad278ece3959877e74e07ab8799a38f8d&ipo=images")

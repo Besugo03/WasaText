@@ -241,9 +241,7 @@ export default {
 		await this.refreshConversations();
 	},
 
-	// beforeDestroy is a lifecycle hook that runs before the component is destroyed
-	// we will use it to clear the interval we set up in mounted.
-	beforeDestroy() {
+	beforeUnmount() {
 		clearInterval(this.pollingTimer);
 	},
 };
@@ -254,7 +252,14 @@ export default {
 		<header
 			class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"
 		>
-			<a class="navbar-brand me-0 px-3 fs-6" href="#/">Example App</a>
+			<a class="navbar-brand me-0 px-3 fs-6" href="#/">
+				WASApp
+				<img
+					src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F8708%2F8708467.png&f=1&nofb=1&ipt=37149496808e91dee11682f8051a4a4c27dd377f3033d141398e7f5a86805d27&ipo=images"
+					width="30"
+					class=""
+				/>
+			</a>
 			<button
 				class="navbar-toggler position-absolute d-md-none collapsed"
 				type="button"
@@ -354,7 +359,7 @@ export default {
 							"
 						>
 							<h5 class="text-light fw-semibold p-3 bg-secondary">
-								start a chat, {{ $username }}!
+								start a chat, {{ $username.value }}!
 							</h5>
 						</div>
 
@@ -377,7 +382,10 @@ export default {
 				</nav>
 
 				<!-- here goes the main screen -->
-				<main class="col-md-9 col-lg-10 ms-sm-auto px-md-4 h-100">
+				<main
+					class="col-md-9 col-lg-10 ms-sm-auto h-100"
+					style="background-color: #16191c"
+				>
 					<RouterView @login="handleLogin" />
 				</main>
 			</div>
