@@ -41,6 +41,32 @@ export default {
 	methods: {
 		async handleMessageSend(messageContent) {
 			console.log("Message : ", messageContent);
+			// contact the api to send the message
+
+			// if the request fails, show an error message.
+			// if the request succeeds, refresh the chat.
+
+			this.$axios
+				.post(
+					"/conversations/message",
+					{
+						conversationId: this.chatID,
+						content: messageContent,
+						isForwarded: false,
+					},
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				)
+				.then(() => {
+					this.refreshChat();
+				})
+				.catch((error) => {
+					console.error(error);
+					this.$emit("error", "Failed to send message");
+				});
 		},
 		scrollToElement() {
 			const el = this.$refs.scrollToMe;
@@ -130,6 +156,9 @@ export default {
 			// this.MessageEntries.reverse();
 		},
 		async refreshChat() {
+			this.messagesIDs = null;
+			this.messages = [];
+			this.MessageEntries = [];
 			// contact the api to get the chat data
 			// if the request fails, set the chat data to a default value.
 			// if the request succeeds, set the chat data to the returned value.
@@ -189,45 +218,47 @@ export default {
 </script>
 
 <template>
-	<div class="chat-wrapper d-flex flex-column">
-		<!-- {{ conversationInfo }} -->
-		<!-- {{ messages }} -->
-
-		<!-- class="flex-grow-1 overflow-auto d-flex flex-column justify-content-start" -->
+	<div>
 		<div
-			class="flex-grow-1 overflow-auto d-flex flex-column justify-content-start"
-			style="min-height: 0"
+			class="chat-wrapper d-flex flex-column"
+			style="min-height: calc(100vh - 8.4rem)"
 		>
+			<!-- {{ conversationInfo }} -->
+			<!-- {{ messages }} -->
+			<!-- class="flex-grow-1 overflow-auto d-flex flex-column justify-content-start" -->
 			<div
-				v-for="messageEntry in MessageEntries"
-				:key="messageEntry.username + messageEntry.timestamp"
-				class="d-flex justify-content-start"
+				class="flex-grow-1 overflow-auto d-flex flex-column justify-content-start"
+				style="min-height: 0"
 			>
-				<DiscordMessage
-					:username="messageEntry.username"
-					:user-picture="messageEntry.userPicture"
-					:timestamp="messageEntry.timestamp"
-					:is-forwarded="messageEntry.isForwarded"
-					:content="messageEntry.content"
-					:messageID="messageEntry.messageID"
-					@forward="forwardMessage"
-					@delete="deleteMessage"
-				></DiscordMessage>
+				<div
+					v-for="messageEntry in MessageEntries"
+					:key="messageEntry.username + messageEntry.timestamp"
+					class="d-flex justify-content-star"
+				>
+					<DiscordMessage
+						:username="messageEntry.username"
+						:user-picture="messageEntry.userPicture"
+						:timestamp="messageEntry.timestamp"
+						:is-forwarded="messageEntry.isForwarded"
+						:content="messageEntry.content"
+						:messageID="messageEntry.messageID"
+						@forward="forwardMessage"
+						@delete="deleteMessage"
+					></DiscordMessage>
+				</div>
+				<!-- The div below is position at the end of the conversation.
+				I found out that if the scroll method was called to the conversation wrapper,
+				it ended up scrolling to the TOP of the conversation, which whas like not scrolling at all.
+				Adding this fixed the problem. -->
+				<div ref="scrollToMe" class="bg-dark"></div>
 			</div>
-			<div ref="scrollToMe" class="bg-dark"></div>
 		</div>
-
-		<!-- The div below is position at the end of the conversation.
-		 I found out that if the scroll method was called to the conversation wrapper,
-		 it ended up scrolling to the TOP of the conversation, which whas like not scrolling at all.
-		 Adding this fixed the problem. -->
 		<MessageSend @send="handleMessageSend" />
 	</div>
 </template>
 
 <style>
 .chat-wrapper {
-	/* height: 100vh; Ensure full viewport height */
 	position: relative;
 }
 

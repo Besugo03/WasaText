@@ -6,11 +6,21 @@ My entry for the 2024/2025 WASA course project.
 
 ## Notes on the implementation
 
-- No images are stored in the database. Every image is rendered from an URL.
+- *No images are stored in the database. Every image is rendered from an URL.*
   - If an image is already on the internet, why would i need to copy it again on my database when I can use someone else's?
   - This gets rid of a lot of headaches with formats, size limits etc... when creating the app
   - This gives users freedom to host their images on whatever sites they prefer, giving them no limits on their resolution
-    - From a privacy perspective, if the user hosts their own images, it means they are free to shut them down, leaving no trace of them in the database, other than their URLs, which at that point result to nothing.
+    - If a user is not capable or does not want to go through the hassle of hosting their own, there is still an **easy-to-use** upload button to upload their images easily and quickly so that they can be used in the chats. (this is powered by an API, in this case the imgBB one.)
+    - From a **privacy perspective**, if the user hosts their own images, it means they are free to shut them down, leaving no trace of them in the database, other than their URLs, which at that point result to nothing.
+- *Multiple chats with the same person*
+  - "Removing" this thing could've been a simple check in the backend, but it's a feature i would've liked to see for a long time in chatting apps. Being able to exchange things like vacation photos, projects information etc... without having to create a group with a single person (which in my opinion makes less sense and is less intuitive than just a normal chat) is really handy.
+  - Kinda similar to how telegram lets you make multiple chats with one person, except it forces you to make it a "private chat".
+- *Groups and conversations are the same thing*
+  - Again, i could've just made two tables, but at their core, a group is just a conversation with more than one person, so it would make little to no sense to treat them differently.
+  - This also gives you the freedom to have, in combination with the previous feature, one-on-one chats that **don't force you** to the picture and name of the other person, without the step of creating a group.
+    - This implies being also able to have "**private**" conversations with someone, e.g. you could rename the one-on-one conversation to some other random name and give it a random profile picture, and if someone snooped at your conversation history on the left, they wouldn't know who actually sent the message unless they took your chats and opened it.
+  - the "group" characteristic is thus **infereced** from just the number of people participating in a conversation.
+  - This was inspired by **Discord's** handling of conversations (specifically the Private Messages section), where a private message is a conversation containing one or more people, and handled the exact same way.
 
 ## General structure
 

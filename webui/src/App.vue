@@ -251,6 +251,7 @@ export default {
 	<div>
 		<header
 			class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"
+			style="height: 3.5rem"
 		>
 			<a class="navbar-brand me-0 px-3 fs-6" href="#/">
 				WASApp
@@ -382,6 +383,9 @@ export default {
 				</nav>
 
 				<!-- here goes the main screen -->
+				<!-- se metto vh-100 poi mi appaiono due scrollbar su una 
+				  chat piena ma una chat vuota e tutte le altre schermate funzionano... -->
+				<!-- se non lo metto si vedono tutti bordi bianchi nelle chat quasi vuote o nelle altre schermate -->
 				<main
 					class="col-md-9 col-lg-10 ms-sm-auto h-100"
 					style="background-color: #16191c"

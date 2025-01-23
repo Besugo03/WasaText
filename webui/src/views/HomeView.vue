@@ -27,7 +27,7 @@ export default {
 </script>
 
 <template>
-	<div>
+	<div style="min-height: calc(100vh - 3.5rem)">
 		<div
 			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom text-white"
 		>

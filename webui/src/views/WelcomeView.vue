@@ -34,7 +34,10 @@ export default {
 </script>
 
 <template>
-	<div class="p-4 d-flex flex-column align-items-center">
+	<div
+		class="p-4 d-flex flex-column align-items-center text-white"
+		style="min-height: calc(100vh - 3.5rem)"
+	>
 		<h2 class="fw-semibold">Welcome, {{ $username.value }}!</h2>
 		<img
 			:src="profilePicture"
