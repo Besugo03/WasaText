@@ -371,8 +371,10 @@ if __name__ == "__main__":
         # test_sendMessage(user7, "1", f"messaggio di test numero {i}", False)
     
     # test_sendMessage(user3, "3", "https://i.imgflip.com/1m36cf.jpg", False)
-    test_sendMessage(user3, "3", "EH! https://i.imgflip.com/1m36cf.jpg VOLEVI! https://i.imgflip.com/1m36cf.jpg MUZUNNA RAHAZZI! https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg", False)
+    # test_sendMessage(user3, "3", "EH! https://i.imgflip.com/1m36cf.jpg VOLEVI! https://i.imgflip.com/1m36cf.jpg MUZUNNA RAHAZZI! https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg", False)
     # test_getConversationInfo(user3, "1")
+
+    # test_addParticipant(user3, "1", "bobbolino")
 
     # test_removeParticipant(user1, "1", "diuk")
     # test_removeParticipant(user3, "2", "newTestUser")

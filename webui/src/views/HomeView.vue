@@ -16,6 +16,7 @@ export default {
 		},
 		login() {
 			this.$username = this.username; // Set the global variable to the input value
+			this.$token.value = ""; // Clear the token
 			this.$emit("login", this.username); // Emit the login event
 			console.log(`Logged in as: ${this.$username}`);
 		},
