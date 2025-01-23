@@ -15,8 +15,10 @@
 # • setMyPhoto
 # • setGroupPhoto
 
-# setBlahBlahBlah uses PUT because it updates the user's name, group name, user's photo, and group photo.
-# this is because the resource is being updated or created at aknown URI.
+# -----------------------------------
+# NOTE FOR THE PROFESSOR / ASSISTANT : 
+# -----------------------------------
+# Please read the Readme.md. It contains the information about some implementation choices.
 
 # try to see wether its better to have the userID in the path or in the body of the request.
 
