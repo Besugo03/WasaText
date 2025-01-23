@@ -41,7 +41,7 @@ func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps htt
 
 	messageID := ps.ByName("messageId")
 
-	messageID, conversationID, senderID, content, timestamp, isForwarded, err := rt.db.GetMessageInfo(messageID, userID)
+	conversationID, messageID, senderID, content, timestamp, isForwarded, err := rt.db.GetMessageInfo(messageID, userID)
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", messageID)
 		http.Error(w, "Failed to get message info", http.StatusInternalServerError)
