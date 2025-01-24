@@ -20,7 +20,6 @@
 # -----------------------------------
 # Please read the Readme.md. It contains the information about some implementation choices.
 
-# try to see wether its better to have the userID in the path or in the body of the request.
 
 openapi: '3.0.2'
 info: {

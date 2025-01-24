@@ -350,13 +350,13 @@ if __name__ == "__main__":
     # Test "Hello World" endpoint
     test_hello_world()
 
-    user1 = test_login("bobbolino")
-    user2 = test_login("besugo")
+    # user1 = test_login("bobbolino")
+    # user2 = test_login("besugo")
     user3 = test_login("diuk")
-    user4 = test_login("vi")
-    user5 = test_login("johnny")
-    user6 = test_login("panam")
-    user7 = test_login("riccardo")
+    # user4 = test_login("vi")
+    # user5 = test_login("johnny")
+    # user6 = test_login("panam")
+    # user7 = test_login("riccardo")
 
     # test_getAllUsers(user1)
     # test_getUserExistence(user1, "diuk")
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     
     # test_sendMessage(user3, "3", "https://i.imgflip.com/1m36cf.jpg", False)
     # test_sendMessage(user3, "3", "EH! https://i.imgflip.com/1m36cf.jpg VOLEVI! https://i.imgflip.com/1m36cf.jpg MUZUNNA RAHAZZI! https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg", False)
-    # test_getConversationInfo(user3, "1")
+    test_getConversationInfo(user3, "5")
 
     # test_addParticipant(user3, "1", "bobbolino")
 
