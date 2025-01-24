@@ -11,6 +11,11 @@ export default {
 			// to get the user's profile pic.
 			// if the request fails, set the profile pic to a default image.
 			// if the request succeeds, set the profile pic to the returned image.
+
+			// wait for the token to be set before making the request
+			while (this.$token.value == "") {
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
 			try {
 				let response = await this.$axios.get(
 					`/users/photo/${this.$username.value}`,
@@ -28,7 +33,7 @@ export default {
 		},
 	},
 	async mounted() {
-		this.getProfilePicture();
+		await this.getProfilePicture();
 	},
 };
 </script>

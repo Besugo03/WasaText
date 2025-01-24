@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
@@ -39,7 +40,13 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 			// TODO implement a way to generate the identifier based on the name.
 			// I'll probably use a UUID or just append something to the username.
 			identifier = req.Username + "123"
+			revisionsCounter := 0
 			err := rt.db.RegisterUser(req.Username, identifier, "")
+			for err != nil {
+				identifier = req.Username + "123" + "_" + strconv.Itoa(revisionsCounter)
+				revisionsCounter++
+				err = rt.db.RegisterUser(req.Username, identifier, "")
+			}
 			if err != nil {
 				rt.baseLogger.WithError(err).Errorf("error creating user %v", req.Username)
 				errorstring := err.Error()

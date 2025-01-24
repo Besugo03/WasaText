@@ -27,7 +27,7 @@ func (rt *_router) changeUserName(w http.ResponseWriter, r *http.Request, _ http
 	err = rt.db.UpdateUser(newUsername.Username, token, "")
 	if err != nil {
 		rt.baseLogger.WithError(err).Error("Error updating the user in the database")
-		http.Error(w, "Failed to update the user", http.StatusInternalServerError)
+		http.Error(w, "Failed to update the user. Did you check if there are other users with that username?", http.StatusInternalServerError)
 		return
 	}
 

@@ -1,11 +1,10 @@
-<script setup></script>
-
 <script>
 import { RouterLink, RouterView } from "vue-router";
 import { ref, provide } from "vue";
 import UserEntry from "./components/UserEntry.vue";
+import ConvertToGroupModal from "./components/ConvertToGroupModal.vue";
 export default {
-	components: { UserEntry },
+	components: { UserEntry, ConvertToGroupModal },
 
 	setup() {
 		const refreshTrigger = ref(0);
@@ -26,12 +25,83 @@ export default {
 			conversationDetails: null,
 			userEntries: [],
 			token: null,
-			pollingInterval: 300,
+			pollingInterval: 5000,
 			pollingTimer: null,
+
+			// Add participants modal
+			showConvertToGroupModal: false,
+			newParticipants: [],
+			currentParticipants: [],
+			isGroupChat: false,
 		};
 	},
 
+	watch: {
+		"$route.params.id": {
+			immediate: true,
+			async handler(newId) {
+				if (newId) {
+					const details = await this.getConversationDetails(newId);
+					this.isGroupChat = details?.isGroup || false;
+					this.currentParticipants = details?.participants || [];
+				}
+			},
+		},
+	},
+
 	methods: {
+		async removeParticipant(username) {
+			try {
+				await this.$axios.put(
+					"/conversations/kickuser",
+					{
+						conversationId: this.$route.params.id,
+						username: username,
+					},
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+				this.refreshTrigger++;
+				this.refreshConversations();
+			} catch (error) {
+				console.error("Failed to remove participant:", error);
+			}
+		},
+
+		async leaveGroup() {
+			await this.removeParticipant(this.$username.value);
+			this.$router.push("/");
+		},
+		navigateToSettings() {
+			const isGroup = this.isGroupChat;
+			const route = isGroup
+				? `/group/settings/${this.$route.params.id}`
+				: `/profile/settings`;
+			this.$router.push(route);
+		},
+
+		async convertToGroup(participants) {
+			try {
+				// Placeholder API call - replace with actual endpoint
+				await this.$axios.put(
+					`/conversations/convert-to-group/${this.$route.params.id}`,
+					{ participants },
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+
+				this.refreshTrigger++;
+				this.showConvertToGroupModal = false;
+			} catch (error) {
+				console.error("Conversion failed:", error);
+			}
+		},
 		startPolling() {
 			console.log("Starting polling");
 			this.pollingTimer = setInterval(async () => {
@@ -131,6 +201,10 @@ export default {
 			// if there is only 1 user, we use a default image (a conversation with yourself)
 			// if there are 2 users, we use the image of the other user.
 
+			console.log(
+				"Conversation details: " + JSON.stringify(conversationDetails)
+			);
+
 			let conversationImage;
 			if (conversationDetails.isGroup) {
 				conversationImage = conversationDetails.picture;
@@ -147,7 +221,15 @@ export default {
 						(user) => user != this.$username.value
 					)[0];
 
+					// probably the case where i got an "undefined" user was just an artifact
+					// created from the backend and not a bad frontend request.
+					// TODO note that i got that edgecase by removing people from conversatoions.
+					if (otherUser == undefined || otherUser == "") {
+						otherUser = this.$username.value;
+					}
+
 					// query the database for the user's image
+					console.log("Querying for user image: " + otherUser);
 					let response = await this.$axios.get(
 						`/users/photo/${otherUser}`,
 						{
@@ -237,6 +319,10 @@ export default {
 
 			// for each conversation ID, get the conversation details. saving it all in a temporary object.
 			let retrievedConversationDetails = {};
+			if (!this.conversationIDs) {
+				console.log("No conversations yet");
+				return;
+			}
 			for (let conversationID of this.conversationIDs) {
 				let details = await this.getConversationDetails(conversationID);
 				retrievedConversationDetails[conversationID] = details;
@@ -285,10 +371,9 @@ export default {
 			this.$username.value = username;
 			// clear the previous user entries
 			this.userEntries = [];
-			await this.refreshConversations().then(() => {
-				console.log("Navigating to welcome screen");
-				this.$router.push("/welcomescreen");
-			});
+			this.$router.push("/welcomescreen");
+			console.log("Navigating to welcome screen");
+			await this.refreshConversations().then(() => {});
 		},
 	},
 
@@ -326,11 +411,12 @@ export default {
 					/>
 				</a>
 				<!-- if the current path (link) ends with "chat/NUMBER", display the div -->
+				<!-- In App.vue's template section, modify the header conditional -->
 				<div
 					v-if="$route.path.split('/')[1] === 'chat'"
-					class="d-flex flex-row align-items-center"
+					class="d-flex flex-row align-items-center position-relative"
+					id="chatHeader"
 				>
-					<!-- show an img with the current conversation -->
 					<img
 						:src="
 							userEntries.find(
@@ -344,7 +430,6 @@ export default {
 						height="30"
 						style="object-fit: cover"
 					/>
-					<!-- show the username of the current conversation -->
 					<h5 class="text-light fw-semibold ms-3 mb-0">
 						{{
 							userEntries.find(
@@ -353,6 +438,79 @@ export default {
 							).username
 						}}
 					</h5>
+
+					<!-- Add participants hover and settings -->
+					<div class="header-actions ms-2">
+						<button
+							class="btn btn-link text-light"
+							@click="navigateToSettings"
+							v-if="isGroupChat"
+						>
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+							>
+								<path
+									d="M19.43 12.98c.04-.3.04-.6.04-.98s0-.68-.04-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65c-.03-.24-.24-.42-.49-.42h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.3-.04.6-.04.98s0 .68.04.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-7.43 2.52c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"
+									fill="currentColor"
+								/>
+							</svg>
+						</button>
+
+						<!-- Participants hover card -->
+						<div
+							v-if="isGroupChat"
+							class="participants-popover bg-dark p-3 rounded shadow"
+							style="width: 250px"
+						>
+							<div
+								class="d-flex justify-content-between align-items-center mb-3"
+							>
+								<h6 class="text-white mb-0">Participants</h6>
+								<button
+									class="btn btn-sm btn-primary"
+									@click.stop="showConvertToGroupModal = true"
+								>
+									Add Members
+								</button>
+							</div>
+
+							<div class="mb-3">
+								<div
+									v-for="participant in currentParticipants"
+									:key="participant"
+									class="d-flex justify-content-between align-items-center mb-2"
+								>
+									<span class="text-light">{{
+										participant
+									}}</span>
+									<button
+										v-if="participant !== $username.value"
+										class="btn btn-sm btn-danger"
+										@click.stop="
+											removeParticipant(participant)
+										"
+									>
+										Remove
+									</button>
+								</div>
+							</div>
+
+							<button
+								class="btn btn-warning btn-sm w-100"
+								@click.stop="leaveGroup"
+							>
+								Leave Group
+							</button>
+						</div>
+						<!-- Convert to group button -->
+						<ConvertToGroupModal
+							v-if="showConvertToGroupModal"
+							@close="showConvertToGroupModal = false"
+						/>
+					</div>
 				</div>
 				<!-- empty div to center the current chat -->
 				<div></div>
@@ -395,7 +553,7 @@ export default {
 							</li>
 							<li class="nav-item">
 								<RouterLink
-									to="/link1"
+									to="/settings"
 									class="nav-link text-light"
 								>
 									<svg
@@ -432,6 +590,27 @@ export default {
 										></path>
 									</svg>
 									Find a user
+								</RouterLink>
+							</li>
+							<li class="nav-item">
+								<RouterLink
+									to="/create-conversation"
+									class="nav-link text-light"
+								>
+									<svg
+										viewBox="0 0 24 24"
+										width="18"
+										fill="none"
+										class="feather mb-1"
+									>
+										<path
+											d="M12 4v16m8-8H4"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
+									</svg>
+									Create Group Chat
 								</RouterLink>
 							</li>
 						</ul>
@@ -500,11 +679,40 @@ export default {
 					class="col-md-9 col-lg-10 ms-sm-auto h-100"
 					style="background-color: #16191c"
 				>
-					<RouterView @login="handleLogin" />
+					<RouterView :key="$route.fullPath" @login="handleLogin" />
 				</main>
 			</div>
 		</div>
 	</div>
 </template>
 
-<style></style>
+<style>
+#chatHeader .header-actions {
+	position: relative;
+	margin-left: 0.5rem;
+}
+
+.participants-popover {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	width: 200px;
+	z-index: 1000;
+	display: none;
+}
+
+#chatHeader:hover .participants-popover {
+	display: block;
+}
+
+.convert-modal {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #2d2d2d;
+	padding: 20px;
+	border-radius: 8px;
+	z-index: 1001;
+}
+</style>
