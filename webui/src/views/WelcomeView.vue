@@ -44,12 +44,22 @@ export default {
 		style="min-height: calc(100vh - 3.5rem)"
 	>
 		<h2 class="fw-semibold">Welcome, {{ $username.value }}!</h2>
-		<img
-			:src="profilePicture"
-			alt="Profile Picture"
-			class="rounded-circle border border-5 border-secondary"
-			style="width: 10rem; height: 10rem; object-fit: cover"
-		/>
+		<div v-if="profilePicture != ''">
+			<img
+				:src="profilePicture"
+				alt="Profile Picture"
+				class="rounded-circle border border-5 border-secondary"
+				style="width: 10rem; height: 10rem; object-fit: cover"
+			/>
+		</div>
+		<div v-else>
+			<img
+				src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+				alt="Profile Picture"
+				class="rounded-circle border border-5 border-secondary"
+				style="width: 10rem; height: 10rem; object-fit: cover"
+			/>
+		</div>
 		<h2>Begin chatting or change your settings from the navbar</h2>
 	</div>
 </template>

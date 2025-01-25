@@ -21,6 +21,8 @@ My entry for the 2024/2025 WASA course project.
     - This implies being also able to have "**private**" conversations with someone, e.g. you could rename the one-on-one conversation to some other random name and give it a random profile picture, and if someone snooped at your conversation history on the left, they wouldn't know who actually sent the message unless they took your chats and opened it.
   - the "group" characteristic is thus **infereced** from just the number of people participating in a conversation.
   - This was inspired by **Discord's** handling of conversations (specifically the Private Messages section), where a private message is a conversation containing one or more people, and handled the exact same way.
+- *You can create a chat with yourself*
+  - Another feature from Telegram. There, you only have the "saved messages" section, which is literally a chat with yourself. In there you can also send messages with a delay to use as a reminder app, very cool. Having multiple chats with yourself lets you organize stuff like storing ideas for different projects, TODOs etc...
 
 ## General structure
 

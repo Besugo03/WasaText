@@ -122,7 +122,8 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 	content, lastMessageID, senderID, timestamp, err := rt.db.GetLastMessage(conversationID)
 	var senderUsername string
 	if err != nil {
-		rt.baseLogger.WithError(err).Errorf("error getting last message for conversation %v", conversationID)
+		// rt.baseLogger.WithError(err).Errorf("error getting last message for conversation %v", conversationID)
+		rt.baseLogger.Infoln("No last message found. Setting content to empty string")
 		// http.Error(w, "Failed to get last message", http.StatusInternalServerError)
 		// set the last message to an empty string if there is no last message
 		content = ""

@@ -33,6 +33,7 @@ export default {
 			newParticipants: [],
 			currentParticipants: [],
 			isGroupChat: false,
+			isConversation: false,
 		};
 	},
 
@@ -42,6 +43,7 @@ export default {
 			async handler(newId) {
 				if (newId) {
 					const details = await this.getConversationDetails(newId);
+					console.log("details: " + details);
 					this.isGroupChat = details?.isGroup || false;
 					this.currentParticipants = details?.participants || [];
 				}
@@ -50,6 +52,17 @@ export default {
 	},
 
 	methods: {
+		async handleParticipantsUpdate() {
+			// Refresh the current conversation details
+			const details = await this.getConversationDetails(
+				this.$route.params.id
+			);
+			this.currentParticipants = details?.participants || [];
+			this.isGroupChat = details?.isGroup || false;
+
+			// Force refresh the header section
+			this.refreshTrigger++;
+		},
 		async removeParticipant(username) {
 			try {
 				await this.$axios.put(
@@ -64,8 +77,7 @@ export default {
 						},
 					}
 				);
-				this.refreshTrigger++;
-				this.refreshConversations();
+				await this.handleParticipantsUpdate(); // Refresh after removal
 			} catch (error) {
 				console.error("Failed to remove participant:", error);
 			}
@@ -201,9 +213,9 @@ export default {
 			// if there is only 1 user, we use a default image (a conversation with yourself)
 			// if there are 2 users, we use the image of the other user.
 
-			console.log(
-				"Conversation details: " + JSON.stringify(conversationDetails)
-			);
+			// console.log(
+			// 	"Conversation details: " + JSON.stringify(conversationDetails)
+			// );
 
 			let conversationImage;
 			if (conversationDetails.isGroup) {
@@ -313,22 +325,22 @@ export default {
 				console.log("No token set");
 				return;
 			}
-			console.log("logged in. Token: " + this.$token.value);
 			await this.getConversationIDs();
 			// console.log(JSON.stringify(this.conversationIDs));
 
 			// for each conversation ID, get the conversation details. saving it all in a temporary object.
+			let retrievedEntries = [];
 			let retrievedConversationDetails = {};
+
 			if (!this.conversationIDs) {
 				console.log("No conversations yet");
-				return;
+				this.userEntries = [];
 			}
+
 			for (let conversationID of this.conversationIDs) {
 				let details = await this.getConversationDetails(conversationID);
 				retrievedConversationDetails[conversationID] = details;
 			}
-
-			let retrievedEntries = [];
 
 			this.conversationDetails = retrievedConversationDetails;
 			// for each conversation, initialize a user-entry object.
@@ -444,7 +456,6 @@ export default {
 						<button
 							class="btn btn-link text-light"
 							@click="navigateToSettings"
-							v-if="isGroupChat"
 						>
 							<svg
 								width="20"
@@ -461,7 +472,6 @@ export default {
 
 						<!-- Participants hover card -->
 						<div
-							v-if="isGroupChat"
 							class="participants-popover bg-dark p-3 rounded shadow"
 							style="width: 250px"
 						>
@@ -490,7 +500,8 @@ export default {
 										v-if="participant !== $username.value"
 										class="btn btn-sm btn-danger"
 										@click.stop="
-											removeParticipant(participant)
+											removeParticipant(participant);
+											this.refreshTrigger++;
 										"
 									>
 										Remove
@@ -498,6 +509,13 @@ export default {
 								</div>
 							</div>
 
+							<!-- Convert to group button -->
+							<ConvertToGroupModal
+								v-if="showConvertToGroupModal"
+								:current-participants="currentParticipants"
+								@close="showConvertToGroupModal = false"
+								@added-participants="handleParticipantsUpdate"
+							/>
 							<button
 								class="btn btn-warning btn-sm w-100"
 								@click.stop="leaveGroup"
@@ -505,11 +523,6 @@ export default {
 								Leave Group
 							</button>
 						</div>
-						<!-- Convert to group button -->
-						<ConvertToGroupModal
-							v-if="showConvertToGroupModal"
-							@close="showConvertToGroupModal = false"
-						/>
 					</div>
 				</div>
 				<!-- empty div to center the current chat -->

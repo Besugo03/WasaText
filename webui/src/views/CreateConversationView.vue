@@ -131,6 +131,14 @@ export default {
 				"https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
 		};
 	},
+	watch: {
+		"$username.value": {
+			immediate: true,
+			handler() {
+				this.loadAllUsers();
+			},
+		},
+	},
 	computed: {
 		filteredUsers() {
 			return this.allUsers.filter(
@@ -152,6 +160,8 @@ export default {
 				const response = await this.$axios.get("/users", {
 					headers: { Authorization: `Bearer ${this.$token.value}` },
 				});
+
+				this.allUsers = [];
 
 				this.allUsers = await Promise.all(
 					response.data.map(async (username) => {
@@ -179,6 +189,11 @@ export default {
 					})
 				);
 			} catch (error) {
+				if (this.$username.value == "") {
+					this.errorMsg =
+						"You are not logged in. Please log in from the 'Change User' section to view your profile.";
+					return;
+				}
 				this.errorMsg = "Failed to load users";
 				console.error(error);
 			} finally {

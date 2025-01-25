@@ -109,6 +109,11 @@ export default {
 			} finally {
 				this.isLoading = false;
 			}
+			if (this.$username.value == "") {
+				this.errorMsg =
+					"You are not logged in. Please log in from the 'Change User' section to view your profile.";
+				return;
+			}
 		},
 
 		async handleStartChat(username) {
