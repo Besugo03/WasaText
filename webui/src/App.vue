@@ -510,13 +510,6 @@ export default {
 								</div>
 							</div>
 
-							<!-- Convert to group button -->
-							<ConvertToGroupModal
-								v-if="showConvertToGroupModal"
-								:current-participants="currentParticipants"
-								@close="showConvertToGroupModal = false"
-								@added-participants="handleParticipantsUpdate"
-							/>
 							<button
 								class="btn btn-warning btn-sm w-100"
 								@click.stop="leaveGroup"
@@ -524,6 +517,13 @@ export default {
 								Leave Group
 							</button>
 						</div>
+						<!-- Convert to group button -->
+						<ConvertToGroupModal
+							v-if="showConvertToGroupModal"
+							:current-participants="currentParticipants"
+							@close="showConvertToGroupModal = false"
+							@added-participants="handleParticipantsUpdate"
+						/>
 					</div>
 				</div>
 				<!-- empty div to center the current chat -->
