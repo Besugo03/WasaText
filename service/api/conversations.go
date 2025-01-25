@@ -491,12 +491,14 @@ func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	// in the body we will have:
 	// conversationId, messageId
 	type forwardMessageRequest struct {
+		// the conversation to which the message will be forwarded
 		ConversationID string `json:"conversationId"`
 		MessageID      string `json:"messageId"`
 	}
 
 	var req forwardMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		rt.baseLogger.Infoln(req)
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -504,8 +506,18 @@ func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	userID := r.Header.Get("Authorization")
 	userID = userID[7:] // strip the "Bearer " prefix
 
-	// get all the messages
-	messageIDs, _, _, contents, _, err := rt.db.GetMessages(req.ConversationID)
+	// get all the messages from the conversation from which the message came from
+	// so first we need the messageinfo
+	messageConversationID, _, _, _, _, _, err := rt.db.GetMessageInfo(req.MessageID, userID)
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting message info for message %v", req.MessageID)
+		http.Error(w, "Failed to get message info", http.StatusInternalServerError)
+		return
+	}
+
+	// then we need the messages
+	messageIDs, _, _, contents, _, err := rt.db.GetMessages(messageConversationID)
+
 	if err != nil {
 		rt.baseLogger.WithError(err).Errorf("error getting messages for conversation %v", req.ConversationID)
 		http.Error(w, "Failed to get messages", http.StatusInternalServerError)
@@ -529,10 +541,13 @@ func (rt *_router) ForwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	var content string = ""
 	for i, messageID := range messageIDs {
 		if messageID == req.MessageID {
+			// we found the message
 			content = contents[i]
 			break
 		}
 	}
+
+	rt.baseLogger.Infoln("Forwarding message", req.MessageID, "from conversation", messageConversationID, "to conversation", req.ConversationID, "with content", content)
 
 	// send the message to the conversation
 	messageID, err := rt.db.SendMessage(req.ConversationID, userID, content, true)

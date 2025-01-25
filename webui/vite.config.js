@@ -17,7 +17,7 @@ export default defineConfig(({command, mode, ssrBuild}) => {
 		// TODO se al prof non va bene che ci sia, levarlo.
 		server: {
 			// host: true, // TODO forse da rimuovere. era per testare su device multipli.
-			// host: '0.0.0.0', // Bind to all network interfaces
+			host: '0.0.0.0', // Bind to all network interfaces
 			watch: {
 			  usePolling: true, // Use polling if file changes are not detected
 			},
