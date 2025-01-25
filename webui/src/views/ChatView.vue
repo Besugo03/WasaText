@@ -1,6 +1,7 @@
 <script>
 import DiscordMessage from "./DiscordMessage.vue";
 import MessageSend from "../components/MessageSend.vue";
+import ForwardMessageModal from "../components/ForwardMessageModal.vue";
 import { inject } from "vue";
 export default {
 	inject: ["refreshTrigger"],
@@ -11,6 +12,7 @@ export default {
 	components: {
 		DiscordMessage,
 		MessageSend,
+		ForwardMessageModal,
 	},
 	mounted() {
 		const chatID = this.$route.params.id;
@@ -29,6 +31,9 @@ export default {
 			messagesIDs: null,
 			messages: [],
 			MessageEntries: [],
+			showForwardModal: false,
+			ForwardMessageID: null,
+			ForwardConversationID: null,
 		};
 	},
 	watch: {
@@ -205,6 +210,10 @@ export default {
 		},
 		forwardMessage(messageID) {
 			console.log(`Forwarding message ${messageID}`);
+			this.showForwardModal = true;
+			this.ForwardMessageID = messageID;
+			// emit the forward event with the messageID
+			// this.$emit("forward", messageID);
 		},
 		deleteMessage(messageID) {
 			console.log(`Deleting message ${messageID}`);
@@ -225,6 +234,13 @@ export default {
 					this.$emit("error", "Failed to delete message");
 				});
 		},
+		closeForwardModal() {
+			console.log("Closing forward modal");
+			// this.$emit("close-forward-modal");
+			this.showForwardModal = false;
+			this.ForwardMessageID = null;
+			this.refreshChat();
+		},
 	},
 };
 </script>
@@ -235,6 +251,12 @@ export default {
 			class="chat-wrapper d-flex flex-column"
 			style="min-height: calc(100vh - 8.4rem)"
 		>
+			<ForwardMessageModal
+				:conversations="$root.userEntries"
+				:messageId="ForwardMessageID"
+				:show="showForwardModal"
+				@close="closeForwardModal"
+			/>
 			<!-- {{ conversationInfo }} -->
 			<!-- {{ messages }} -->
 			<!-- class="flex-grow-1 overflow-auto d-flex flex-column justify-content-start" -->

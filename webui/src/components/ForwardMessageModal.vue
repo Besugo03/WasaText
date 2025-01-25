@@ -2,6 +2,7 @@
 	<div
 		class="convert-modal text-white p-4 rounded"
 		style="width: 500px; background: #2d2d2d"
+		v-if="show"
 	>
 		<div class="d-flex justify-content-between align-items-center mb-4">
 			<h4 class="mb-0">Forward Message</h4>
@@ -24,7 +25,7 @@
 			<div
 				v-for="conversation in filteredConversations"
 				:key="conversation.conversationID"
-				class="user-entry d-flex align-items-center p-2 bg-dark rounded mb-2"
+				class="user-entry d-flex align-items-center p-2 rounded mb-2"
 				@click="selectConversation(conversation.conversationID)"
 			>
 				<img
@@ -61,6 +62,10 @@
 
 <script>
 export default {
+	mounted() {
+		console.log("Conversations: ");
+		console.log(this.conversations.map((conv) => conv.username));
+	},
 	props: {
 		conversations: {
 			type: Array,
@@ -68,6 +73,10 @@ export default {
 		},
 		messageId: {
 			type: String,
+			required: true,
+		},
+		show: {
+			type: Boolean,
 			required: true,
 		},
 	},
@@ -81,12 +90,10 @@ export default {
 	},
 	computed: {
 		filteredConversations() {
-			return this.conversations.filter(
-				(conv) =>
-					conv.username
-						.toLowerCase()
-						.includes(this.searchQuery.toLowerCase()) &&
-					conv.conversationID !== this.$route.params.id // Exclude current conversation
+			return this.conversations.filter((conv) =>
+				conv.username
+					.toLowerCase()
+					.includes(this.searchQuery.toLowerCase())
 			);
 		},
 	},
@@ -96,13 +103,16 @@ export default {
 			this.errorMsg = "";
 			this.successMsg = "";
 
+			console.log("conversationId: ", targetConversationId);
+			console.log("messageId: ", this.messageId);
+			console.log("token: ", this.$token.value);
+
 			try {
 				await this.$axios.post(
 					"/conversations/message/forward",
 					{
 						conversationId: targetConversationId,
-						messageId: this.messageId,
-						isForwarded: true,
+						messageId: this.messageId.toString(),
 					},
 					{
 						headers: {
@@ -112,7 +122,8 @@ export default {
 				);
 
 				this.successMsg = "Message forwarded successfully!";
-				setTimeout(() => this.$emit("close"), 2000);
+				setTimeout(() => this.$emit("close"), 100);
+				this.$router.push(`/chat/${targetConversationId}`);
 			} catch (error) {
 				this.errorMsg =
 					error.response?.data?.message ||
@@ -136,11 +147,12 @@ export default {
 }
 
 .user-entry {
+	background-color: rgba(159, 159, 159, 0.1);
 	transition: background-color 0.2s ease;
 	cursor: pointer;
 }
 
 .user-entry:hover {
-	background-color: rgba(255, 255, 255, 0.05);
+	background-color: rgba(139, 139, 139, 0.376);
 }
 </style>
