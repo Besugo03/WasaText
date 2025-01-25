@@ -217,14 +217,6 @@ export default {
 </script>
 
 <style scoped>
-.convert-modal {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	z-index: 1000;
-}
-
 .user-entry {
 	transition: background-color 0.2s ease;
 	cursor: pointer;
