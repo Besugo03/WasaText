@@ -16,7 +16,7 @@ const router = createRouter({
 		{path: '/create-conversation', component: CreateConversation},
 		{path: '/some/:id/link', component: HomeView},
 		{path: '/welcomescreen', component: WelcomeView},
-		{path: '/chat/:id', component: ChatView},
+		{path: '/chat/:id', component: ChatView, props: true},
 	]
 })
 

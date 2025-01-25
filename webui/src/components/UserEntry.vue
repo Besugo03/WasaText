@@ -13,9 +13,13 @@
 				:src="imageUrl"
 				class="rounded-circle"
 				alt="avatar-icon"
-				width="50"
-				height="50"
-				style="object-fit: cover"
+				style="
+					object-fit: cover;
+					width: 50px !important;
+					height: 50px !important;
+					flex-shrink: 0;
+					image-rendering: optimizeSpeed;
+				"
 			/>
 			<!-- username  and last text -->
 			<div
@@ -37,7 +41,16 @@
 						class="mb-0 align-self-start text-light text-start text-truncate"
 					>
 						<!-- last text -->
-						{{ lastText }}
+						<!-- if it's an image (ends with .png, .jpg, .jpeg etc..) return "IMAGE" -->
+						{{
+							lastText.match(".gif")
+								? "🎞️ GIF"
+								: /\.(jpg|jpeg|png|gif|bmp|webp|tiff|svg)$/.test(
+										lastText
+								  )
+								? "📷 Image"
+								: lastText
+						}}
 					</p>
 				</div>
 			</div>

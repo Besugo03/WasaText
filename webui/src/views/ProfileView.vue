@@ -25,10 +25,25 @@
 			<div class="col-md-8 col-lg-6">
 				<!-- Image Upload -->
 				<div class="mb-4">
-					<label class="form-label"
-						>Change
-						{{ isGroup ? "Group Image" : "Profile Picture" }}</label
-					>
+					<label class="form-label">
+						Change {{ isGroup ? "Group Image" : "Profile Picture" }}
+					</label>
+
+					<!-- URL Input -->
+					<div class="mb-3">
+						<input
+							type="url"
+							class="form-control bg-dark text-white mb-2"
+							placeholder="Or enter image URL..."
+							v-model="imageUrl"
+							@input="handleUrlInput"
+						/>
+						<small class="text-muted"
+							>Supported formats: .jpg, .jpeg, .png, .gif</small
+						>
+					</div>
+
+					<!-- File Upload -->
 					<div class="d-flex gap-3 align-items-center">
 						<input
 							type="file"
@@ -40,7 +55,7 @@
 						<button
 							class="btn btn-outline-danger"
 							@click="clearImage"
-							:disabled="!newPhoto"
+							:disabled="!newPhoto && !imageUrl"
 						>
 							Reset
 						</button>
@@ -92,7 +107,9 @@ export default {
 	data() {
 		return {
 			imgbbApiKey: "IMGUBB_API_KEY_PLACEHOLDER", // Add imgBB API key
+			imageUrl: "",
 			isGroup: false,
+			isConversation: false,
 			currentName: "",
 			currentPhoto: "",
 			editedName: "",
@@ -106,18 +123,28 @@ export default {
 	computed: {
 		hasChanges() {
 			return (
-				this.editedName !== this.currentName || this.newPhoto !== null
+				this.editedName !== this.currentName ||
+				this.newPhoto !== null ||
+				this.imageUrl !== ""
 			);
 		},
 	},
 	async mounted() {
 		this.isGroup = this.$route.path.includes("/group/");
+		this.isConversation = this.$route.path.includes("/chat/");
 		await this.loadCurrentSettings();
 	},
 	methods: {
+		handleUrlInupt() {
+			if (this.validateImageUrl(this.imageUrl)) {
+				this.newPhoto = null; // Clear file upload
+				this.currentPhoto = this.imageUrl;
+				this.$refs.fileInput.value = ""; // Clear file input
+			}
+		},
 		async loadCurrentSettings() {
 			try {
-				if (this.isGroup) {
+				if (this.isGroup || this.isConversation) {
 					const response = await this.$axios.get(
 						`/conversations/info/${this.$route.params.id}`,
 						{
@@ -129,8 +156,6 @@ export default {
 					this.currentName = response.data.name;
 					this.currentPhoto = response.data.picture;
 				} else {
-					console.log("not group");
-					console.log(this.$username.value);
 					const response = await this.$axios.get(
 						"/users/photo/" + this.$username.value,
 						{
@@ -145,16 +170,24 @@ export default {
 				}
 				this.editedName = this.currentName;
 			} catch (error) {
+				if (this.$username.value == "") {
+					this.errorMsg =
+						"You are not logged in. Please log in from the 'Change User' section to view your profile.";
+					return;
+				}
 				this.errorMsg = "Failed to load current settings";
 				console.error(error);
 			}
 		},
 
+		// Updated image upload handler
 		handleImageUpload(event) {
 			const file = event.target.files[0];
 			if (!file) return;
 
+			this.imageUrl = ""; // Clear URL input
 			this.newPhoto = file;
+
 			const reader = new FileReader();
 			reader.onload = (e) => {
 				this.currentPhoto = e.target.result;
@@ -164,10 +197,21 @@ export default {
 
 		clearImage() {
 			this.newPhoto = null;
+			this.imageUrl = "";
 			this.currentPhoto = this.isGroup
 				? this.currentPhoto // Keep group image if exists
-				: this.defaultImage; // Reset to default for profile
+				: this.defaultImage;
 			this.$refs.fileInput.value = "";
+		},
+
+		validateImageUrl(url) {
+			const pattern = /\.(jpeg|jpg|gif|png|webp)$/i;
+			if (!pattern.test(url)) {
+				this.errorMsg = "Please enter a valid image URL";
+				return false;
+			}
+			this.errorMsg = "";
+			return true;
 		},
 
 		async saveChanges() {
@@ -176,9 +220,13 @@ export default {
 
 			try {
 				let imageUrl = this.currentPhoto;
-
+				// Handle URL input
+				if (this.imageUrl) {
+					if (!this.validateImageUrl(this.imageUrl)) return;
+					imageUrl = this.imageUrl;
+				}
 				// Upload new photo to imgBB if changed
-				if (this.newPhoto) {
+				else if (this.newPhoto) {
 					const imgbbFormData = new FormData();
 					imgbbFormData.append("image", this.newPhoto);
 
@@ -197,26 +245,26 @@ export default {
 					}
 
 					imageUrl = imgbbData.data.url;
-
-					// Update photo URL in backend
-					const endpoint = this.isGroup
-						? `/conversations/photo`
-						: `/user/photo`;
-
-					await this.$axios.put(
-						endpoint,
-						{
-							photo: imageUrl,
-							conversationId: this.$route.params.id,
-						},
-						{
-							headers: {
-								Authorization: `Bearer ${this.$token.value}`,
-								"Content-Type": "application/json",
-							},
-						}
-					);
 				}
+
+				// Update photo URL in backend
+				const endpoint = this.isGroup
+					? `/conversations/photo`
+					: `/user/photo`;
+
+				await this.$axios.put(
+					endpoint,
+					{
+						photo: imageUrl,
+						conversationId: this.$route.params.id,
+					},
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
 				// Update name if changed
 				if (this.editedName !== this.currentName) {
@@ -244,11 +292,10 @@ export default {
 								},
 							}
 						);
+						// Update currentName if successful
+						this.currentName = this.editedName;
+						this.$username.value = this.editedName;
 					}
-
-					// Update currentName if successful
-					this.currentName = this.editedName;
-					this.$username.value = this.editedName;
 				}
 
 				// Refresh data
@@ -265,7 +312,9 @@ export default {
 			}
 
 			this.$router.push(
-				this.isGroup ? `/chat/${this.$route.params.id}` : "/profile"
+				this.isGroup
+					? `/chat/${this.$route.params.id}`
+					: "/welcomescreen"
 			);
 		},
 
