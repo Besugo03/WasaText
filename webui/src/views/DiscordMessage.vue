@@ -26,7 +26,9 @@
 					<span class="timestamp text-muted small">{{
 						formattedTimestamp
 					}}</span>
+					<!-- Message actions -->
 					<div class="message-actions ms-auto">
+						<!-- Forward button -->
 						<button
 							class="btn-action text-muted small"
 							@click="$emit('forward', messageID)"
@@ -44,6 +46,8 @@
 								/>
 							</svg>
 						</button>
+
+						<!-- Delete button -->
 						<button
 							class="btn-action text-muted small ms-2"
 							@click="$emit('delete', messageID)"
@@ -59,6 +63,28 @@
 								<path
 									d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
 								/>
+							</svg>
+						</button>
+
+						<!-- Add Comment Button -->
+						<button
+							class="btn-action text-muted small ms-2"
+							title="Add Comment"
+							@click="toggleCommentInput"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="16"
+								height="16"
+								fill="none"
+								stroke="currentColor"
+							>
+								<path
+									d="M7 9H17M7 13H17M21 20L17.6757 18.3378C17.4237 18.2118 17.2977 18.1488 17.1656 18.1044C17.0484 18.065 16.9277 18.0365 16.8052 18.0193C16.6672 18 16.5263 18 16.2446 18H6.2C5.07989 18 4.51984 18 4.09202 17.782C3.71569 17.5903 3.40973 17.2843 3.21799 16.908C3 16.4802 3 15.9201 3 14.8V7.2C3 6.07989 3 5.51984 3.21799 5.09202C3.40973 4.71569 3.71569 4.40973 4.09202 4.21799C4.51984 4 5.0799 4 6.2 4H17.8C18.9201 4 19.4802 4 19.908 4.21799C20.2843 4.40973 20.5903 4.71569 20.782 5.09202C21 5.51984 21 6.0799 21 7.2V20Z"
+									stroke-width="1.344"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
 							</svg>
 						</button>
 					</div>
@@ -98,6 +124,35 @@
 						</template>
 					</template>
 				</div>
+
+				<!-- Add comment input -->
+				<div v-if="showCommentInput" class="comment-input mt-2">
+					<!-- <div class="comment-input mt-2"> -->
+					<input
+						ref="commentInput"
+						v-model="newComment"
+						@keyup.enter="submitComment"
+						class="form-control form-control-sm bg-dark text-white"
+						placeholder="Type a comment..."
+					/>
+				</div>
+				<!-- Display comments -->
+				<div
+					v-if="comments.length > 0"
+					class="comments mt-2 d-flex flex-wrap gap-2"
+				>
+					<div
+						v-for="(comment, index) in aggregatedComments"
+						:key="index"
+						class="comment-badge badge bg-secondary d-flex align-items-center gap-2"
+						@click="addDuplicateComment(comment.text)"
+					>
+						<span>{{ comment.text }}</span>
+						<span class="count-badge bg-dark rounded-pill px-2">{{
+							comment.count
+						}}</span>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -105,6 +160,113 @@
 
 <script>
 export default {
+	data() {
+		return {
+			showCommentInput: false,
+			newComment: "",
+			comments: [],
+			isLoadingComments: false,
+		};
+	},
+	mounted() {
+		this.loadComments();
+	},
+	methods: {
+		toggleCommentInput() {
+			this.showCommentInput = !this.showCommentInput;
+			if (!this.showCommentInput) this.newComment = "";
+			// make it so that the input is focused when it's shown
+			if (this.showCommentInput) {
+				this.$nextTick(() => {
+					this.$refs.commentInput.focus();
+				});
+			}
+		},
+
+		async loadComments() {
+			try {
+				this.isLoadingComments = true;
+				const response = await this.$axios.get(
+					`/conversations/message/getcomments/${this.messageID}`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+				this.comments = response.data;
+				console.log("Comments:", this.comments);
+			} catch (error) {
+				console.error("Error loading comments:", error);
+			} finally {
+				this.isLoadingComments = false;
+			}
+		},
+
+		async submitComment() {
+			if (!this.newComment.trim()) return;
+
+			try {
+				await this.$axios.post(
+					`/conversations/message/comment/${this.messageID}`,
+					{ content: this.newComment },
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+				await this.loadComments();
+				this.newComment = "";
+				this.showCommentInput = false;
+			} catch (error) {
+				console.error("Error submitting comment:", error);
+			}
+		},
+
+		async addDuplicateComment(text) {
+			// first, we need to check if we already have a comment with the same content sent from the same user
+			// contact the api to get the comments info
+			// if the request fails, set the comments info to a default value.
+			// if the request succeeds, set the comments info to the returned value.
+			let response = await this.$axios.get(
+				`/conversations/message/getcomments/${this.messageID}`,
+				{
+					headers: {
+						Authorization: `Bearer ${this.$token.value}`,
+					},
+				}
+			);
+
+			const comments = response.data;
+			if (
+				comments.some(
+					(comment) =>
+						comment.content === text &&
+						comment.senderId === this.$token.value
+				)
+			) {
+				console.log("Comment already exists from you");
+				return;
+			}
+
+			try {
+				await this.$axios.post(
+					`/conversations/message/comment/${this.messageID}`,
+					{ content: text },
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+				await this.loadComments();
+			} catch (error) {
+				console.error("Error adding duplicate comment:", error);
+			}
+		},
+	},
+
 	// components: { ForwardSVG },
 	props: {
 		messageID: {
@@ -135,6 +297,16 @@ export default {
 	},
 	emits: ["forward", "delete"],
 	computed: {
+		aggregatedComments() {
+			const counts = {};
+			this.comments.forEach((comment) => {
+				counts[comment.content] = (counts[comment.content] || 0) + 1;
+			});
+			return Object.entries(counts).map(([text, count]) => ({
+				text,
+				count,
+			}));
+		},
 		formattedTimestamp() {
 			if (this.timestamp instanceof Date) {
 				return this.timestamp.toLocaleTimeString([], {
@@ -260,5 +432,24 @@ export default {
 	width: 2px;
 	background-color: #f48e00;
 	border-radius: 2px;
+}
+</style>
+
+<style scoped>
+.comment-input {
+	width: 200px;
+}
+
+.comment-badge {
+	cursor: pointer;
+	transition: transform 0.2s ease;
+}
+
+.comment-badge:hover {
+	transform: scale(1.05);
+}
+
+.count-badge {
+	font-size: 0.75rem;
 }
 </style>

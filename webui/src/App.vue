@@ -138,7 +138,7 @@ export default {
 				return;
 			}
 			if (this.$token.value) {
-				console.log("Token already exists: " + this.$token.value);
+				// console.log("Token already exists: " + this.$token.value);
 				return;
 			}
 			try {

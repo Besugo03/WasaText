@@ -207,6 +207,15 @@ export default {
 			}
 			this.messages = retrievedMessages;
 			await this.prepareMessageEntries();
+			// Wait for DOM update
+			await this.$nextTick();
+
+			// Refresh comments for each message component
+			if (this.$refs.messageComponents) {
+				this.$refs.messageComponents.forEach((component) => {
+					component.loadComments();
+				});
+			}
 		},
 		forwardMessage(messageID) {
 			console.log(`Forwarding message ${messageID}`);
@@ -266,10 +275,12 @@ export default {
 			>
 				<div
 					v-for="messageEntry in MessageEntries"
-					:key="messageEntry.username + messageEntry.timestamp"
+					:key="messageEntry.messageID"
 					class="d-flex justify-content-star"
 				>
 					<DiscordMessage
+						ref="messageComponents"
+						:key="messageEntry.messageID"
 						:username="messageEntry.username"
 						:user-picture="messageEntry.userPicture"
 						:timestamp="messageEntry.timestamp"
