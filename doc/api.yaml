@@ -153,34 +153,36 @@ paths:
               example:
                 users: ["Alice", "Bob", "Juanito el matador de IBM"]
 
-  /users/exists/{username}:
-    get:
-      tags: ["user"]
-      description: Check if a user exists
-      summary: Check if a user exists
-      operationId: userExists
-      parameters:
-        - name: userID
-          description: ID of the user
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/UserId'
-      responses:
-        '200':
-          description: User exists
-          content:
-            application/json:
-              schema:
-                description: the object that contains the user's existence
-                type: object
-                properties:
-                  exists:
-                    description: A boolean that indicates if the user exists.
-                    type: boolean
-                    example: true
-              example:
-                exists: true
+  # Old endpoint. Probably not needed in production.
+  # keeping it because the implementation is already done, and it came handy for testing.
+  # /users/exists/{username}:
+  #   get:
+  #     tags: ["user"]
+  #     description: Check if a user exists
+  #     summary: Check if a user exists
+  #     operationId: userExists
+  #     parameters:
+  #       - name: userID
+  #         description: ID of the user
+  #         in: path
+  #         required: true
+  #         schema:
+  #           $ref: '#/components/schemas/UserId'
+  #     responses:
+  #       '200':
+  #         description: User exists
+  #         content:
+  #           application/json:
+  #             schema:
+  #               description: the object that contains the user's existence
+  #               type: object
+  #               properties:
+  #                 exists:
+  #                   description: A boolean that indicates if the user exists.
+  #                   type: boolean
+  #                   example: true
+  #             example:
+  #               exists: true
 
   /conversations:
     get:
@@ -414,6 +416,22 @@ paths:
                     description: A boolean that indicates if the message was forwarded.
                     type: boolean
                     example: false
+                  isReceived:
+                    description: A boolean that indicates if the message was received by the current, logged in user.
+                    type: boolean
+                    example: true
+                  isRead:
+                    description: A boolean that indicates if the message was read by the current, logged in user.
+                    type: boolean
+                    example: true
+                  isReceivedByAll:
+                    description: A boolean that indicates if the message was received by all participants in the conversation.
+                    type: boolean
+                    example: true
+                  isReadByAll:
+                    description: A boolean that indicates if the message was read by all participants in the conversation.
+                    type: boolean
+                    example: true
                 example:
                   messageId: "abcdef012345"
                   conversationId: "1"
