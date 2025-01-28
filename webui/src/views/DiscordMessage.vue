@@ -1,7 +1,10 @@
 <template>
 	<div
 		class="message-container p-3 hover-bg w-100"
-		:class="{ 'forwarded-message': isForwarded }"
+		:class="{
+			'forwarded-message': isForwarded,
+			'reply-active': isReplyVisualActive,
+		}"
 	>
 		<div class="d-flex">
 			<!-- User Avatar -->
@@ -28,6 +31,30 @@
 					}}</span>
 					<!-- Message actions -->
 					<div class="message-actions ms-auto">
+						<!-- Reply to message Button -->
+						<button
+							class="btn-action text-muted small me-2"
+							title="Reply to message"
+							@click="
+								$emit('reply', messageID);
+								toggleReplyVisual();
+							"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								width="16"
+								height="16"
+								stroke="currentColor"
+							>
+								<path
+									d="M20 17V15.8C20 14.1198 20 13.2798 19.673 12.638C19.3854 12.0735 18.9265 11.6146 18.362 11.327C17.7202 11 16.8802 11 15.2 11H4M4 11L8 7M4 11L8 15"
+									stroke-width="2.3"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
+							</svg>
+						</button>
 						<!-- Forward button -->
 						<button
 							class="btn-action text-muted small"
@@ -102,7 +129,15 @@
 					/>
 					Forwarded
 				</div>
-
+				<div
+					v-if="replyingTo"
+					class="text-white d-flex p-2 rounded mb-1"
+					style="background-color: #282c34"
+				>
+					<div class="pe-1">Replying to</div>
+					<div class="pe-1">{{ repliedMessage.sender }} :</div>
+					<div class="text-muted">"{{ repliedMessage.content }}"</div>
+				</div>
 				<!-- Message Body -->
 				<div class="message-body text-white">
 					<div v-if="isSingleImage" class="single-image">
@@ -113,8 +148,9 @@
 							<span
 								v-if="part.type === 'text'"
 								:key="`text-${index}`"
-								>{{ part.content }}</span
 							>
+								{{ part.content }}
+							</span>
 							<img
 								v-else
 								:key="`img-${index}`"
@@ -141,16 +177,64 @@
 					v-if="comments.length > 0"
 					class="comments mt-2 d-flex flex-wrap gap-2"
 				>
+					<!-- show the comment with primary bg if the current user was part of the commenters for it -->
 					<div
 						v-for="(comment, index) in aggregatedComments"
 						:key="index"
-						class="comment-badge badge bg-secondary d-flex align-items-center gap-2"
+						:style="{
+							backgroundColor: comment.commenters.includes(
+								$token.value
+							)
+								? '#6f562c'
+								: '#282c34',
+						}"
+						class="comment-badge badge d-flex align-items-center gap-2"
 						@click="addDuplicateComment(comment.text)"
 					>
 						<span>{{ comment.text }}</span>
 						<span class="count-badge bg-dark rounded-pill px-2">{{
 							comment.count
 						}}</span>
+					</div>
+				</div>
+				<!-- Read / Received display -->
+				<div>
+					<div
+						v-if="!isReadByAll && isReceivedByAll"
+						class="text-muted small"
+					>
+						<svg
+							viewBox="0 0 24 24"
+							width="16"
+							height="16"
+							fill="none"
+						>
+							<path
+								id="Vector"
+								d="M4 12L8.94975 16.9497L19.5572 6.34326"
+								stroke="#f48e00"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							></path>
+						</svg>
+					</div>
+					<div v-if="isReceivedByAll" class="text-muted">
+						<svg
+							viewBox="0 0 24 24"
+							width="16"
+							height="16"
+							fill="none"
+						>
+							<path
+								id="Vector"
+								d="M7 12L11.9497 16.9497L22.5572 6.34326M2.0498 12.0503L6.99955 17M17.606 6.39355L12.3027 11.6969"
+								stroke="#f48e00"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							></path>
+						</svg>
 					</div>
 				</div>
 			</div>
@@ -166,12 +250,32 @@ export default {
 			newComment: "",
 			comments: [],
 			isLoadingComments: false,
+			repliedMessage: {},
+			isReplyVisualActive: false,
 		};
 	},
 	mounted() {
 		this.loadComments();
+		if (this.replyingTo !== null) {
+			this.getReplyingMessageInfo(this.replyingTo).then((data) => {
+				this.repliedMessage = data;
+			});
+		}
 	},
 	methods: {
+		toggleReplyVisual() {},
+		// gets the content and the user that sent the message we are replying to
+		async getReplyingMessageInfo(messageID) {
+			let response = await this.$axios.get(
+				`/conversations/message/info/${messageID}`,
+				{
+					headers: {
+						Authorization: `Bearer ${this.$token.value}`,
+					},
+				}
+			);
+			return response.data;
+		},
 		toggleCommentInput() {
 			this.showCommentInput = !this.showCommentInput;
 			if (!this.showCommentInput) this.newComment = "";
@@ -195,7 +299,6 @@ export default {
 					}
 				);
 				this.comments = response.data;
-				console.log("Comments:", this.comments);
 			} catch (error) {
 				console.error("Error loading comments:", error);
 			} finally {
@@ -224,6 +327,38 @@ export default {
 			}
 		},
 
+		async removeComment(text) {
+			let response = await this.$axios.get(
+				`/conversations/message/getcomments/${this.messageID}`,
+				{
+					headers: {
+						Authorization: `Bearer ${this.$token.value}`,
+					},
+				}
+			);
+
+			// since we can only have one same-text comment per user, we can safely assume that there is only one comment with the same text and senderId
+			const ownComment = response.data.filter(
+				(comment) =>
+					comment.content === text &&
+					comment.senderId === this.$token.value
+			)[0];
+
+			try {
+				await this.$axios.delete(
+					`/conversations/message/comment/${ownComment.commentId}`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.$token.value}`,
+						},
+					}
+				);
+				await this.loadComments();
+			} catch (error) {
+				console.error("Error removing comment:", error);
+			}
+		},
+
 		async addDuplicateComment(text) {
 			// first, we need to check if we already have a comment with the same content sent from the same user
 			// contact the api to get the comments info
@@ -247,6 +382,7 @@ export default {
 				)
 			) {
 				console.log("Comment already exists from you");
+				this.removeComment(text);
 				return;
 			}
 
@@ -269,6 +405,26 @@ export default {
 
 	// components: { ForwardSVG },
 	props: {
+		isRead: {
+			type: Boolean,
+			required: true,
+		},
+		isReadByAll: {
+			type: Boolean,
+			required: true,
+		},
+		isReceivedByAll: {
+			type: Boolean,
+			required: true,
+		},
+		isReceived: {
+			type: Boolean,
+			required: true,
+		},
+		replyingTo: {
+			type: String,
+			required: false,
+		},
 		messageID: {
 			type: String,
 			required: true,
@@ -295,16 +451,37 @@ export default {
 			required: true,
 		},
 	},
-	emits: ["forward", "delete"],
+	emits: ["forward", "delete", "reply"],
 	computed: {
 		aggregatedComments() {
 			const counts = {};
+			const commenters = {};
+
+			// Iterate through the comments to aggregate counts and collect commenters
 			this.comments.forEach((comment) => {
-				counts[comment.content] = (counts[comment.content] || 0) + 1;
+				const content = comment.content;
+				const commenter = comment.senderId; // Assuming `senderId` is the property for the commenter's ID
+
+				// Initialize the count and commenters array if the content is encountered for the first time
+				if (!counts[content]) {
+					counts[content] = 0;
+					commenters[content] = [];
+				}
+
+				// Increment the count for this content
+				counts[content] += 1;
+
+				// Add the commenter to the list if they haven't already been added
+				if (!commenters[content].includes(commenter)) {
+					commenters[content].push(commenter);
+				}
 			});
+
+			// Transform the aggregated data into the desired format
 			return Object.entries(counts).map(([text, count]) => ({
 				text,
 				count,
+				commenters: commenters[text], // Include the list of commenters
 			}));
 		},
 		formattedTimestamp() {
@@ -336,6 +513,7 @@ export default {
 				lastIndex = match.index + match[0].length;
 			}
 
+			// Add the remaining text after the last image
 			const textAfter = this.content.slice(lastIndex);
 			if (textAfter) parts.push({ type: "text", content: textAfter });
 
@@ -346,9 +524,16 @@ export default {
 </script>
 
 <style>
+/* .reply-active {
+	background-color: #ffc42f23;
+} */
+
 .message-actions {
 	opacity: 0;
 	transition: opacity 0.2s ease;
+}
+
+.message-container {
 }
 
 .hover-bg:hover .message-actions {

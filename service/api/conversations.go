@@ -55,14 +55,26 @@ func (rt *_router) GetMessageInfo(w http.ResponseWriter, r *http.Request, ps htt
 		http.Error(w, "Failed to get username", http.StatusInternalServerError)
 		return
 	}
+	// get the read / received status of the last message
+	isReceived, isRead, isReceivedByAll, isReadByAll, err := rt.db.GetMessageStatus(messageID, userID)
+
+	if err != nil {
+		rt.baseLogger.WithError(err).Errorf("error getting message status for message %v", messageID)
+		http.Error(w, "Failed to get message status", http.StatusInternalServerError)
+		return
+	}
 
 	resp := map[string]interface{}{
-		"messageId":      messageID,
-		"conversationId": conversationID,
-		"sender":         senderUsername,
-		"content":        content,
-		"timestamp":      timestamp,
-		"isForwarded":    isForwarded,
+		"messageId":       messageID,
+		"conversationId":  conversationID,
+		"sender":          senderUsername,
+		"content":         content,
+		"timestamp":       timestamp,
+		"isForwarded":     isForwarded,
+		"isReceived":      isReceived,
+		"isRead":          isRead,
+		"isReceivedByAll": isReceivedByAll,
+		"isReadByAll":     isReadByAll,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -121,6 +133,7 @@ func (rt *_router) GetConversationInfo(w http.ResponseWriter, r *http.Request, p
 	// also, get the details of the last message for the preview
 	content, lastMessageID, senderID, timestamp, err := rt.db.GetLastMessage(conversationID)
 	var senderUsername string
+
 	if err != nil {
 		// rt.baseLogger.WithError(err).Errorf("error getting last message for conversation %v", conversationID)
 		rt.baseLogger.Infoln("No last message found. Setting content to empty string")

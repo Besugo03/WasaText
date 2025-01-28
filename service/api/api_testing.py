@@ -367,12 +367,14 @@ if __name__ == "__main__":
 
     # test_createConversation_withDiuk(user7)
 
+    # test_getMessageInfo(user3, "24")
+
     # for i in range (1, 10):
         # test_sendMessage(user7, "1", f"messaggio di test numero {i}", False)
     
     # test_sendMessage(user3, "3", "https://i.imgflip.com/1m36cf.jpg", False)
     # test_sendMessage(user3, "3", "EH! https://i.imgflip.com/1m36cf.jpg VOLEVI! https://i.imgflip.com/1m36cf.jpg MUZUNNA RAHAZZI! https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg https://i.imgflip.com/1m36cf.jpg", False)
-    test_getConversationInfo(user3, "5")
+    # test_getConversationInfo(user3, "5")
 
     # test_addParticipant(user3, "1", "bobbolino")
 

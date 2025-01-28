@@ -2,7 +2,7 @@
 import DiscordMessage from "./DiscordMessage.vue";
 import MessageSend from "../components/MessageSend.vue";
 import ForwardMessageModal from "../components/ForwardMessageModal.vue";
-import { inject } from "vue";
+import { inject, useSSRContext } from "vue";
 export default {
 	inject: ["refreshTrigger"],
 	setup() {
@@ -34,6 +34,8 @@ export default {
 			showForwardModal: false,
 			ForwardMessageID: null,
 			ForwardConversationID: null,
+			startingMessage: "",
+			currentlyReplyingMessage: null,
 		};
 	},
 	watch: {
@@ -56,6 +58,18 @@ export default {
 		},
 	},
 	methods: {
+		async replyMessage(messageID) {
+			if (
+				this.startingMessage !== "" &&
+				this.currentlyReplyingMessage === messageID
+			) {
+				this.startingMessage = "";
+				this.currentlyReplyingMessage = null;
+				return;
+			}
+			this.startingMessage = `replying to ${messageID} :`;
+			this.currentlyReplyingMessage = messageID;
+		},
 		async handleMessageSend(messageContent) {
 			console.log("Message : ", messageContent);
 			// contact the api to send the message
@@ -84,6 +98,7 @@ export default {
 					console.error(error);
 					this.$emit("error", "Failed to send message");
 				});
+			this.startingMessage = "";
 		},
 		scrollToElement() {
 			const el = this.$refs.scrollToMe;
@@ -155,9 +170,16 @@ export default {
 				}
 
 				let messageID = message.messageId;
-				console.log(message);
 				let isForwarded = message.isForwarded;
 				let content = message.content;
+
+				let replyTo = null;
+				// if content starst with "replying to NUMBER :", then set the "replyingTo" prop to NUMBER, and remove the "replying to NUMBER :" from the content
+				if (content.startsWith("replying to")) {
+					replyTo = content.split(" ")[2];
+					content = content.replace(`replying to ${replyTo} :`, "");
+				}
+
 				this.MessageEntries.push({
 					username: sender,
 					userPicture: userPicture,
@@ -165,12 +187,15 @@ export default {
 					isForwarded: isForwarded,
 					content: content,
 					messageID: messageID,
+					replyingTo: replyTo,
+					isRead: message.isRead,
+					isReceived: message.isReceived,
+					isReadByAll: message.isReadByAll,
+					isReceivedByAll: message.isReceivedByAll,
 				});
 				await this.$nextTick();
 				this.scrollToElement();
 			}
-			// reverse the array so the messages are displayed in the correct order
-			// this.MessageEntries.reverse();
 		},
 		async refreshChat() {
 			this.messagesIDs = null;
@@ -276,9 +301,14 @@ export default {
 				<div
 					v-for="messageEntry in MessageEntries"
 					:key="messageEntry.messageID"
-					class="d-flex justify-content-star"
+					class="d-flex justify-content-start"
 				>
 					<DiscordMessage
+						:style="
+							currentlyReplyingMessage === messageEntry.messageID
+								? { backgroundColor: '#6f562c' }
+								: {}
+						"
 						ref="messageComponents"
 						:key="messageEntry.messageID"
 						:username="messageEntry.username"
@@ -287,8 +317,14 @@ export default {
 						:is-forwarded="messageEntry.isForwarded"
 						:content="messageEntry.content"
 						:messageID="messageEntry.messageID"
+						:replyingTo="messageEntry.replyingTo"
+						:isRead="messageEntry.isRead"
+						:isReceived="messageEntry.isReceived"
+						:isReadByAll="messageEntry.isReadByAll"
+						:isReceivedByAll="messageEntry.isReceivedByAll"
 						@forward="forwardMessage"
 						@delete="deleteMessage"
+						@reply="replyMessage"
 					></DiscordMessage>
 				</div>
 				<!-- The div below is position at the end of the conversation.
@@ -298,7 +334,10 @@ export default {
 				<div ref="scrollToMe" class="bg-dark"></div>
 			</div>
 		</div>
-		<MessageSend @send="handleMessageSend" />
+		<MessageSend
+			@send="handleMessageSend"
+			:messageStart="startingMessage"
+		/>
 	</div>
 </template>
 

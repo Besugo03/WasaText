@@ -65,6 +65,7 @@ type AppDatabase interface {
 	GetLastMessage(conversationID string) (string, string, string, string, error)
 	DeleteMessage(messageID string) error
 	GetMessageInfo(messageID string, userID string) (string, string, string, string, string, bool, error)
+	GetMessageStatus(messageID string, userID string) (bool, bool, bool, bool, error)
 
 	CheckCommentsTable() error
 	AddComment(messageID string, senderID string, content string) error

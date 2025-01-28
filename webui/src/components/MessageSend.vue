@@ -3,7 +3,28 @@
 	<div
 		class="message-send-container sticky-bottom bg-dark p-3 rounded-top w-100"
 	>
-		<div class="row g-2">
+		<div class="row g-2 d-flex flex-row">
+			<div class="w-auto h-auto flex-col text-white" v-if="messageStart">
+				<div>
+					<svg
+						data-v-6128a7d3=""
+						viewBox="0 0 24 24"
+						fill="none"
+						width="16"
+						height="16"
+						stroke="#ffffff"
+					>
+						<path
+							data-v-6128a7d3=""
+							d="M20 17V15.8C20 14.1198 20 13.2798 19.673 12.638C19.3854 12.0735 18.9265 11.6146 18.362 11.327C17.7202 11 16.8802 11 15.2 11H4M4 11L8 7M4 11L8 15"
+							stroke-width="2.3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						></path>
+					</svg>
+				</div>
+				{{ replyingTo }}
+			</div>
 			<div class="col">
 				<div class="d-flex align-items-center gap-2">
 					<textarea
@@ -84,18 +105,47 @@
 
 <script>
 export default {
+	props: {
+		// string to start the message with
+		messageStart: {
+			type: String,
+			default: "",
+			required: false,
+		},
+	},
 	name: "MessageSend",
+	// mounted() {
+	// 	this.$root.$on("reply", this.handleReply);
+	// },
+	// beforeUnmount() {
+	// 	this.$root.$off("reply", this.handleReply);
+	// },
 	data() {
 		return {
 			messageText: "",
 			isUploading: false,
 			imgbbApiKey: "21faba3731fc41dba67d6f0211b0cbca", // Replace with your ImgBB API key
+			messageStartString: "",
+			replyingTo: null,
 		};
 	},
+	watch: {
+		messageStart(newVal) {
+			this.messageStartString = newVal;
+			// set the replyingto to the messageStartString
+			this.replyingTo = newVal.split(" ")[2];
+		},
+	},
 	methods: {
+		handleReply(message) {
+			console.log("Replying to message:", message);
+			this.replyingTo = message;
+			this.messageText = `> ${message.username} said: ${message.content}\n`;
+			this.$refs.messageInput.focus();
+		},
 		sendMessage() {
 			if (this.messageText.trim()) {
-				this.$emit("send", this.messageText);
+				this.$emit("send", this.messageStartString + this.messageText);
 				this.messageText = "";
 			}
 		},
