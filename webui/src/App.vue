@@ -241,8 +241,6 @@ export default {
 						otherUser = this.$username.value;
 					}
 
-					// query the database for the user's image
-					console.log("Querying for user image: " + otherUser);
 					let response = await this.$axios.get(
 						`/users/photo/${otherUser}`,
 						{

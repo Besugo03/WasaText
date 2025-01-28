@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -396,4 +397,73 @@ func (db *appdbimpl) GetLastMessage(conversationID string) (string, string, stri
 	var messageID, senderID, timestamp, content string
 	err = db.c.QueryRow("SELECT message_id, sender_id, timestamp, content FROM messages_table WHERE conversation_id = ? ORDER BY timestamp DESC LIMIT 1", conversationID).Scan(&messageID, &senderID, &timestamp, &content)
 	return content, messageID, senderID, timestamp, err
+}
+
+// get the read/received status of a message by a user
+func (db *appdbimpl) GetMessageStatus(messageID string, userID string) (bool, bool, bool, bool, error) {
+	err := db.CheckConversationsTable()
+	if err != nil {
+		return false, false, false, false, err
+	}
+	var isReceived, isRead bool
+	err = db.c.QueryRow("SELECT is_received, is_read FROM message_status_table WHERE message_id = ? AND user_id = ?", messageID, userID).Scan(&isReceived, &isRead)
+	if err != nil {
+		return false, false, false, false, err
+	}
+
+	var isReceivedByAll, isReadByAll bool
+	// if a message is received by all participants (for each entry of a given message_id in the message_status_table, is_received is TRUE for that message_id), then isReceivedByAll is TRUE
+
+	// 1. get all the entries for the message_id in the message_status_table
+	// 2. check if all the entries have is_received as TRUE
+	// 3. if all the entries have is_received as TRUE, then isReceivedByAll is TRUE
+	rows, err := db.c.Query("SELECT is_received FROM message_status_table WHERE message_id = ?", messageID)
+	if err != nil {
+		return false, false, false, false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var received bool
+		err = rows.Scan(&received)
+		if err != nil {
+			return false, false, false, false, err
+		}
+		if !received {
+			isReceivedByAll = false
+			break
+		}
+		isReceivedByAll = true
+	}
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return false, false, false, false, err
+	}
+
+	// if a message is read by all participants (for each entry of a given message_id in the message_status_table, is_read is TRUE for that message_id), then isReadByAll is TRUE
+	rows, err = db.c.Query("SELECT is_read FROM message_status_table WHERE message_id = ?", messageID)
+	if err != nil {
+		return false, false, false, false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var read bool
+		err = rows.Scan(&read)
+		if err != nil {
+			return false, false, false, false, err
+		}
+		fmt.Println(read)
+		if !read {
+			isReadByAll = false
+			break
+		}
+		isReadByAll = true
+	}
+	// Check for errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return false, false, false, false, err
+	}
+
+	return isReceived, isRead, isReceivedByAll, isReadByAll, err
 }
