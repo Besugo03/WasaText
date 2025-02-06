@@ -3,9 +3,8 @@ import { RouterLink, RouterView } from "vue-router";
 import { ref, provide } from "vue";
 import UserEntry from "./components/UserEntry.vue";
 import ConvertToGroupModal from "./components/ConvertToGroupModal.vue";
-import ForwardMessageModal from "./components/ForwardMessageModal.vue";
 export default {
-	components: { UserEntry, ConvertToGroupModal, ForwardMessageModal },
+	components: { UserEntry, ConvertToGroupModal },
 
 	setup() {
 		const refreshTrigger = ref(0);
