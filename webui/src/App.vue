@@ -137,6 +137,12 @@ export default {
 				this.$username.value = localStorage.getItem("username");
 				return this.$token.value;
 			}
+			// if (localStorage.getItem("token")) {
+			// 	console.log("Token already exists");
+			// 	this.$token.value = localStorage.getItem("token");
+			// 	this.$username.value = localStorage.getItem("username");
+			// 	return this.$token.value;
+			// }
 			this.loading = true;
 			this.errormsg = null;
 			if (this.$username.value === "") {
@@ -340,7 +346,7 @@ export default {
 			let retrievedEntries = [];
 			let retrievedConversationDetails = {};
 
-			if (!this.conversationIDs) {
+			if (!this.conversationIDs || this.conversationIDs.length === 0) {
 				console.log("No conversations yet");
 				this.userEntries = [];
 			}
@@ -389,6 +395,9 @@ export default {
 
 		async handleLogin(username) {
 			this.$username.value = username;
+			this.$token.value = "";
+			localStorage.setItem("username", this.$username.value);
+			this.getToken();
 			// clear the previous user entries
 			this.userEntries = [];
 			this.$router.push("/welcomescreen");
@@ -401,6 +410,7 @@ export default {
 	// we will use it to get the token, but we need to make the function async to use await.
 	async mounted() {
 		// await this.refreshConversations();
+		await this.getToken();
 		this.startPolling();
 	},
 
