@@ -129,6 +129,14 @@ export default {
 		},
 
 		async getToken() {
+			console.log("stored token : ", localStorage.getItem("token"));
+			console.log("stored username : ", localStorage.getItem("username"));
+			if (localStorage.getItem("token")) {
+				console.log("Token already exists");
+				this.$token.value = localStorage.getItem("token");
+				this.$username.value = localStorage.getItem("username");
+				return this.$token.value;
+			}
 			this.loading = true;
 			this.errormsg = null;
 			if (this.$username.value === "") {
@@ -155,6 +163,8 @@ export default {
 				);
 				this.token = response.data.identifier;
 				this.$token.value = this.token;
+				localStorage.setItem("token", this.token);
+				localStorage.setItem("username", this.$username.value);
 			} catch (e) {
 				this.errormsg = e.toString();
 			}
