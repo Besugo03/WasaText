@@ -283,15 +283,24 @@ export default {
 							}
 						);
 					} else {
-						await this.$axios.put(
-							"/user/username",
-							{ username: this.editedName },
-							{
-								headers: {
-									Authorization: `Bearer ${this.$token.value}`,
-								},
+						try {
+							await this.$axios.put(
+								"/user/username",
+								{ username: this.editedName },
+								{
+									headers: {
+										Authorization: `Bearer ${this.$token.value}`,
+									},
+								}
+							);
+						} catch (error) {
+							// Handle username already taken
+							if (error.response?.status === 500) {
+								this.errorMsg = "Username already taken";
+								return;
 							}
-						);
+						}
+
 						// Update currentName if successful
 						this.currentName = this.editedName;
 						this.$username.value = this.editedName;
