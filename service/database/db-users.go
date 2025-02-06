@@ -123,6 +123,10 @@ func (db *appdbimpl) GetAllUsers() ([]string, error) {
 		}
 		users = append(users, username)
 	}
+	// check for errors during the iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return users, nil
 }
 

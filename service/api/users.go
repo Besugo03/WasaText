@@ -85,35 +85,35 @@ func (rt *_router) getAllUsers(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 }
 
-func (rt *_router) checkUserExistence(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	token := r.Header.Get("Authorization")
-	token = strings.TrimPrefix(token, "Bearer ")
-	rt.baseLogger.Infof("Received token : %v", token)
+// func (rt *_router) checkUserExistence(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// 	token := r.Header.Get("Authorization")
+// 	token = strings.TrimPrefix(token, "Bearer ")
+// 	rt.baseLogger.Infof("Received token : %v", token)
 
-	// user_id is passed in the URL
-	userID := ps.ByName("userId")
+// 	// user_id is passed in the URL
+// 	userID := ps.ByName("userId")
 
-	// check if the user exists in the database
-	exists, err := rt.db.CheckUserExistence(userID)
-	if err != nil {
-		rt.baseLogger.WithError(err).Error("Error checking the user existence in the database")
-		http.Error(w, "Failed to check the user existence", http.StatusInternalServerError)
-		return
-	}
+// 	// check if the user exists in the database
+// 	exists, err := rt.db.CheckUserExistence(userID)
+// 	if err != nil {
+// 		rt.baseLogger.WithError(err).Error("Error checking the user existence in the database")
+// 		http.Error(w, "Failed to check the user existence", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	// return the result as a json payload
-	w.Header().Set("content-type", "application/json")
-	err = json.NewEncoder(w).Encode(struct {
-		Exists bool `json:"exists"`
-	}{
-		Exists: exists,
-	})
-	if err != nil {
-		rt.baseLogger.WithError(err).Error("Error encoding the existence")
-		http.Error(w, "Failed to encode the existence", http.StatusInternalServerError)
-		return
-	}
-}
+// 	// return the result as a json payload
+// 	w.Header().Set("content-type", "application/json")
+// 	err = json.NewEncoder(w).Encode(struct {
+// 		Exists bool `json:"exists"`
+// 	}{
+// 		Exists: exists,
+// 	})
+// 	if err != nil {
+// 		rt.baseLogger.WithError(err).Error("Error encoding the existence")
+// 		http.Error(w, "Failed to encode the existence", http.StatusInternalServerError)
+// 		return
+// 	}
+// }
 
 // get a specified user's profile details from the database (username, photo)
 func (rt *_router) getUserPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

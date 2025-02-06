@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -453,7 +452,7 @@ func (db *appdbimpl) GetMessageStatus(messageID string, userID string) (bool, bo
 		if err != nil {
 			return false, false, false, false, err
 		}
-		fmt.Println(read)
+		// fmt.Println(read)
 		if !read {
 			isReadByAll = false
 			break
