@@ -13,6 +13,7 @@ export default {
 			// if the request succeeds, set the profile pic to the returned image.
 
 			// wait for the token to be set before making the request
+			console.log("stored token value: ", this.$token.value);
 			while (this.$token.value == "") {
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}

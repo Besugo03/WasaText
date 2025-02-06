@@ -16,6 +16,7 @@ export default {
 		},
 		login() {
 			this.$username = this.username; // Set the global variable to the input value
+			localStorage.setItem("username", this.$username); // Save the username to local storage
 			this.$token.value = ""; // Clear the token
 			this.$emit("login", this.username); // Emit the login event
 			console.log(`Logged in as: ${this.$username}`);
