@@ -533,9 +533,6 @@ export default {
 	transition: opacity 0.2s ease;
 }
 
-.message-container {
-}
-
 .hover-bg:hover .message-actions {
 	opacity: 1;
 }
