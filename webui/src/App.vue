@@ -346,11 +346,13 @@ export default {
 			let retrievedEntries = [];
 			let retrievedConversationDetails = {};
 
-			if (!this.conversationIDs || this.conversationIDs.length === 0) {
+			if (
+				this.conversationIDs == null ||
+				this.conversationIDs.length === 0
+			) {
 				console.log("No conversations yet");
-				this.userEntries = [];
+				return;
 			}
-
 			for (let conversationID of this.conversationIDs) {
 				let details = await this.getConversationDetails(conversationID);
 				retrievedConversationDetails[conversationID] = details;
