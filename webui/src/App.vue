@@ -129,10 +129,10 @@ export default {
 		},
 
 		async getToken() {
-			console.log("stored token : ", localStorage.getItem("token"));
-			console.log("stored username : ", localStorage.getItem("username"));
+			// console.log("stored token : ", localStorage.getItem("token"));
+			// console.log("stored username : ", localStorage.getItem("username"));
 			if (localStorage.getItem("token")) {
-				console.log("Token already exists");
+				// console.log("Token already exists");
 				this.$token.value = localStorage.getItem("token");
 				this.$username.value = localStorage.getItem("username");
 				return this.$token.value;
@@ -388,7 +388,7 @@ export default {
 				this.userEntries = [];
 				this.userEntries = retrievedEntries;
 				this.refreshTrigger++;
-				console.log("refreshTrigger value : " + this.refreshTrigger);
+				// console.log("refreshTrigger value : " + this.refreshTrigger);
 			} else {
 				console.log("No new messages...");
 			}

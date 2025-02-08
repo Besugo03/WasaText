@@ -32,7 +32,7 @@ export default {
 			messages: [],
 			MessageEntries: [],
 			showForwardModal: false,
-			ForwardMessageID: null,
+			ForwardMessageID: "",
 			ForwardConversationID: null,
 			startingMessage: "",
 			currentlyReplyingMessage: null,
@@ -177,9 +177,22 @@ export default {
 				// if content starst with "replying to NUMBER :", then set the "replyingTo" prop to NUMBER, and remove the "replying to NUMBER :" from the content
 				if (content.startsWith("replying to")) {
 					replyTo = content.split(" ")[2];
-					c;
 					content = content.replace(`replying to ${replyTo} :`, "");
 				}
+
+				// log all the stuff before pushing to the array
+				// console.log("message ", i);
+				// console.log(sender);
+				// console.log(userPicture);
+				// console.log(timestamp);
+				// console.log(isForwarded);
+				// console.log(content);
+				// console.log(messageID);
+				// console.log(replyTo);
+				// console.log(message.isRead);
+				// console.log(message.isReceived);
+				// console.log(message.isReadByAll);
+				// console.log(message.isReceivedByAll);
 
 				this.MessageEntries.push({
 					username: sender,
@@ -273,7 +286,7 @@ export default {
 			console.log("Closing forward modal");
 			// this.$emit("close-forward-modal");
 			this.showForwardModal = false;
-			this.ForwardMessageID = null;
+			this.ForwardMessageID = "";
 			this.refreshChat();
 		},
 	},
