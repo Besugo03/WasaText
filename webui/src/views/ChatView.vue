@@ -177,6 +177,7 @@ export default {
 				// if content starst with "replying to NUMBER :", then set the "replyingTo" prop to NUMBER, and remove the "replying to NUMBER :" from the content
 				if (content.startsWith("replying to")) {
 					replyTo = content.split(" ")[2];
+					c;
 					content = content.replace(`replying to ${replyTo} :`, "");
 				}
 

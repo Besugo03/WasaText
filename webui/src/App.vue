@@ -399,6 +399,7 @@ export default {
 			this.$username.value = username;
 			this.$token.value = "";
 			localStorage.setItem("username", this.$username.value);
+			localStorage.setItem("token", "");
 			this.getToken();
 			// clear the previous user entries
 			this.userEntries = [];
