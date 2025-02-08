@@ -259,6 +259,21 @@ export default {
 		if (this.replyingTo !== null) {
 			this.getReplyingMessageInfo(this.replyingTo).then((data) => {
 				this.repliedMessage = data;
+				if (
+					this.repliedMessage.content.match(
+						/(https?:\/\/\S+?\.(?:png|jpg|jpeg|gif|webp)(?:\?\S*)?)/gi
+					)
+				) {
+					this.repliedMessage.content = "📷 Image";
+				}
+
+				// if the message starts with "replying to NUMBER", remove the "replying to NUMBER" part
+				if (this.repliedMessage.content.startsWith("replying to")) {
+					this.repliedMessage.content = this.repliedMessage.content
+						.split(" ")
+						.slice(3)
+						.join(" ");
+				}
 			});
 		}
 	},
