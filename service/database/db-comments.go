@@ -58,6 +58,9 @@ func (db *appdbimpl) GetComments(messageID string) (commentIDs []string, message
 		contents = append(contents, content)
 		timestamps = append(timestamps, timestamp)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	return commentIDs, messageIDs, senderIDs, contents, timestamps, nil
 }
 
