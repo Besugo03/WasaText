@@ -25,7 +25,7 @@ export default {
 			conversationDetails: null,
 			userEntries: [],
 			token: null,
-			pollingInterval: 5000,
+			pollingInterval: 300,
 			pollingTimer: null,
 
 			// Add participants modal
