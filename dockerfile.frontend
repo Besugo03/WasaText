@@ -5,3 +5,4 @@ WORKDIR /app/webui
 RUN yarn run build-prod
 FROM nginx:stable
 COPY --from=builder /app/webui/dist /usr/share/nginx/html
+# capitalized
