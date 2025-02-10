@@ -1,6 +1,3 @@
-# Specifications:
-# view specifications.txt
-
 # • setMyUserName
 # • getMyConversations
 # • getConversation
@@ -16,17 +13,17 @@
 # • setGroupPhoto
 
 # -----------------------------------
-# NOTE FOR THE PROFESSOR / ASSISTANT : 
+# NOTE FOR THE PROFESSOR / ASSISTANT :
 # -----------------------------------
 # Please read the Readme.md. It contains the information about some implementation choices.
 
-
-openapi: '3.0.2'
-info: {
-  title: WASAText,
-  version: '1.0',
-  description: "Sadly missed the opportunity to name it 'Wasapp'.",
-  contact: {}
+openapi: "3.0.2"
+info:
+  {
+    title: WASAText,
+    version: "1.0",
+    description: "Sadly missed the opportunity to name it 'Wasapp'.",
+    contact: {},
   }
 servers:
   - url: https://wasatext.com/v1
@@ -47,7 +44,7 @@ paths:
   /session:
     post:
       tags: ["login"]
-      description : logs in the user.
+      description: logs in the user.
       summary: User log-in
       operationId: doLogin
       requestBody:
@@ -59,9 +56,9 @@ paths:
               type: object
               properties:
                 username:
-                  $ref: '#/components/schemas/ValidName'
+                  $ref: "#/components/schemas/ValidName"
       responses:
-        '201':
+        "201":
           description: User log-in action successful
           content:
             application/json:
@@ -70,7 +67,7 @@ paths:
                 type: object
                 properties:
                   identifier:
-                    $ref: '#/components/schemas/AuthorizationToken'
+                    $ref: "#/components/schemas/AuthorizationToken"
                 example:
                   identifier: "Bearer abcdef012345"
 
@@ -89,14 +86,14 @@ paths:
               description: the object that contains the new name for a user
               properties:
                 username:
-                  $ref: '#/components/schemas/ValidName'
+                  $ref: "#/components/schemas/ValidName"
       responses:
-        '200':
+        "200":
           description: Username updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: "#/components/schemas/SuccessResponse"
               example:
                 message: "OK"
 
@@ -115,16 +112,16 @@ paths:
               description: the object that contains the new photo for a user
               properties:
                 photo:
-                  $ref: '#/components/schemas/ValidPicture'
+                  $ref: "#/components/schemas/ValidPicture"
       responses:
-        '200':
+        "200":
           description: Profile photo updated successfully
           content:
             application/json:
               example:
                 message: "OK"
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: "#/components/schemas/SuccessResponse"
 
   /users:
     get:
@@ -133,7 +130,7 @@ paths:
       summary: Retrieve all users
       operationId: getUsers
       responses:
-        '200':
+        "200":
           description: List of users
           content:
             application/json:
@@ -147,42 +144,11 @@ paths:
                     description: An array of usernames
                     type: array
                     items:
-                      $ref: '#/components/schemas/ValidName'
+                      $ref: "#/components/schemas/ValidName"
                     minItems: 0 # 'users' can still be empty though
                     maxItems: 999999999
               example:
                 users: ["Alice", "Bob", "Juanito el matador de IBM"]
-
-  # Old endpoint. Probably not needed in production.
-  # keeping it because the implementation is already done, and it came handy for testing.
-  # /users/exists/{username}:
-  #   get:
-  #     tags: ["user"]
-  #     description: Check if a user exists
-  #     summary: Check if a user exists
-  #     operationId: userExists
-  #     parameters:
-  #       - name: userID
-  #         description: ID of the user
-  #         in: path
-  #         required: true
-  #         schema:
-  #           $ref: '#/components/schemas/UserId'
-  #     responses:
-  #       '200':
-  #         description: User exists
-  #         content:
-  #           application/json:
-  #             schema:
-  #               description: the object that contains the user's existence
-  #               type: object
-  #               properties:
-  #                 exists:
-  #                   description: A boolean that indicates if the user exists.
-  #                   type: boolean
-  #                   example: true
-  #             example:
-  #               exists: true
 
   /conversations:
     get:
@@ -191,7 +157,7 @@ paths:
       summary: Retrieve user's conversations
       operationId: getMyConversations
       responses:
-        '200':
+        "200":
           description: List of conversations
           content:
             application/json:
@@ -205,7 +171,7 @@ paths:
                     description: An array of the conversation ids
                     type: array
                     items:
-                      $ref: '#/components/schemas/ConversationId'
+                      $ref: "#/components/schemas/ConversationId"
                     minItems: 0 # 'conversations' can still be empty though
                     maxItems: 999999999
               example:
@@ -223,56 +189,56 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/ConversationId'
+            $ref: "#/components/schemas/ConversationId"
       responses:
-        '200':
+        "200":
           description: Details of the conversation
           content:
             application/json:
               schema:
                 required:
-                  - messages  # Mark the messages array as required
-                  - participants  # Mark the participants array as required
+                  - messages # Mark the messages array as required
+                  - participants # Mark the participants array as required
                 description: the object that contains the conversation's information
                 type: object
                 properties:
                   conversationId:
-                    $ref: '#/components/schemas/ConversationId'
+                    $ref: "#/components/schemas/ConversationId"
                   isGroup:
                     description: A boolean that indicates if the conversation is a group.
                     type: boolean
                     example: true
                   name:
-                    $ref: '#/components/schemas/ValidName'
-                  picture: 
-                    $ref: '#/components/schemas/ValidPicture'
+                    $ref: "#/components/schemas/ValidName"
+                  picture:
+                    $ref: "#/components/schemas/ValidPicture"
                   messages:
-                    type : array # an array of the message ids
+                    type: array # an array of the message ids
                     description: An array of the message ids
                     minItems: 0
                     maxItems: 999999999
                     items:
-                      $ref: '#/components/schemas/MessageOrCommentContents'
+                      $ref: "#/components/schemas/MessageOrCommentContents"
                   participants:
                     description: An array of the participants' names.
                     type: array
                     minItems: 1
                     maxItems: 256
                     items:
-                      $ref: '#/components/schemas/ValidName'
+                      $ref: "#/components/schemas/ValidName"
                     example: ["Besugo", "Pepito"]
                   lastMessage:
                     description: The last message sent in the conversation.
                     type: object
                     properties:
                       content:
-                        $ref: '#/components/schemas/MessageOrCommentContents'
+                        $ref: "#/components/schemas/MessageOrCommentContents"
                       messageId:
-                        $ref: '#/components/schemas/MessageOrCommentId'
+                        $ref: "#/components/schemas/MessageOrCommentId"
                       sender:
-                        $ref: '#/components/schemas/ValidName'
+                        $ref: "#/components/schemas/ValidName"
                       timestamp:
-                        $ref: '#/components/schemas/TimeStamp'
+                        $ref: "#/components/schemas/TimeStamp"
               example:
                 conversationId: "1"
                 isGroup: true
@@ -301,18 +267,18 @@ paths:
               type: object
               properties:
                 name:
-                  $ref: '#/components/schemas/ValidName'
+                  $ref: "#/components/schemas/ValidName"
                 picture:
-                  $ref: '#/components/schemas/ValidPicture'
+                  $ref: "#/components/schemas/ValidPicture"
                 participants:
                   description: An array of the participants' names.
                   type: array
                   items:
-                    $ref : '#/components/schemas/ValidName'
+                    $ref: "#/components/schemas/ValidName"
                   minItems: 1
                   maxItems: 10
       responses:
-        '201':
+        "201":
           description: Conversation created successfully
           content:
             application/json:
@@ -321,7 +287,7 @@ paths:
                 type: object
                 properties:
                   conversationId:
-                    $ref: '#/components/schemas/ConversationId'
+                    $ref: "#/components/schemas/ConversationId"
                 example:
                   conversationId: "1"
 
@@ -340,15 +306,15 @@ paths:
               type: object
               properties:
                 conversationId:
-                  $ref: '#/components/schemas/ConversationId'
+                  $ref: "#/components/schemas/ConversationId"
                 content:
-                  $ref: '#/components/schemas/MessageOrCommentContents'
+                  $ref: "#/components/schemas/MessageOrCommentContents"
                 isForwarded:
                   description: A boolean that indicates if the message was forwarded.
                   type: boolean
                   example: false
       responses:
-        '201':
+        "201":
           # description: Message sent successfully
           # it returns the message_id
           content:
@@ -358,7 +324,7 @@ paths:
                 type: object
                 properties:
                   messageId:
-                    $ref: '#/components/schemas/MessageOrCommentId'
+                    $ref: "#/components/schemas/MessageOrCommentId"
                 example:
                   messageId: "abcdef012345"
           description: Message sent successfully
@@ -375,26 +341,26 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/MessageOrCommentId'
+            $ref: "#/components/schemas/MessageOrCommentId"
       responses:
-        '204':
+        "204":
           description: Message removed successfully
 
   /conversations/message/info/{messageID}:
     get:
       parameters:
-          - name: messageID
-            description: ID of the message
-            in: path
-            required: true
-            schema:
-              $ref: '#/components/schemas/MessageOrCommentId'
+        - name: messageID
+          description: ID of the message
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/MessageOrCommentId"
       tags: ["message"]
       description: Retrieve a single message's info.
       summary: Retrieve a single message
       operationId: getMessage
       responses:
-        '200':
+        "200":
           description: Details of the message
           content:
             application/json:
@@ -403,15 +369,15 @@ paths:
                 type: object
                 properties:
                   messageId:
-                    $ref: '#/components/schemas/MessageOrCommentId'
+                    $ref: "#/components/schemas/MessageOrCommentId"
                   conversationId:
-                    $ref: '#/components/schemas/ConversationId'
+                    $ref: "#/components/schemas/ConversationId"
                   sender:
-                    $ref: '#/components/schemas/ValidName'
+                    $ref: "#/components/schemas/ValidName"
                   content:
-                    $ref: '#/components/schemas/MessageOrCommentContents'
+                    $ref: "#/components/schemas/MessageOrCommentContents"
                   timestamp:
-                    $ref: '#/components/schemas/TimeStamp'
+                    $ref: "#/components/schemas/TimeStamp"
                   isForwarded:
                     description: A boolean that indicates if the message was forwarded.
                     type: boolean
@@ -455,13 +421,13 @@ paths:
               type: object
               properties:
                 targetConversationId:
-                  $ref: '#/components/schemas/ConversationId'
+                  $ref: "#/components/schemas/ConversationId"
                 messageId:
-                  $ref: '#/components/schemas/MessageOrCommentId'
+                  $ref: "#/components/schemas/MessageOrCommentId"
       responses:
-        '201':
-        # returns the message_id of the forwarded message
-        # (it basically re-sends the message with the flag "isForwarded" set on true)
+        "201":
+          # returns the message_id of the forwarded message
+          # (it basically re-sends the message with the flag "isForwarded" set on true)
           content:
             application/json:
               schema:
@@ -469,7 +435,7 @@ paths:
                 type: object
                 properties:
                   messageId:
-                    $ref: '#/components/schemas/MessageOrCommentId'
+                    $ref: "#/components/schemas/MessageOrCommentId"
                 example:
                   messageId: "1"
           description: Message forwarded successfully
@@ -486,7 +452,7 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/MessageOrCommentId'
+            $ref: "#/components/schemas/MessageOrCommentId"
       requestBody:
         required: true
         content:
@@ -503,7 +469,7 @@ paths:
                   example: "This is a comment."
                   type: string
       responses:
-        '202': # had to make it a 202 because every single thing i tried made the IBM lords mad.
+        "202": # had to make it a 202 because every single thing i tried made the IBM lords mad.
           description: Comment added successfully
 
   /conversations/message/comment/{commentID}:
@@ -513,14 +479,14 @@ paths:
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/MessageOrCommentId'
+          $ref: "#/components/schemas/MessageOrCommentId"
     delete:
       tags: ["message"]
       description: Remove comment from a message
       summary: Remove comment from a message
       operationId: uncommentMessage
       responses:
-        '204':
+        "204":
           description: Comment removed successfully
     get:
       tags: ["message"]
@@ -528,7 +494,7 @@ paths:
       summary: Retrieve a single comment's information
       operationId: getComments
       responses:
-        '200':
+        "200":
           description: List of comments
           content:
             application/json:
@@ -537,13 +503,13 @@ paths:
                 type: object
                 properties:
                   messageId:
-                    $ref: '#/components/schemas/MessageOrCommentId'
+                    $ref: "#/components/schemas/MessageOrCommentId"
                   content:
-                    $ref: '#/components/schemas/MessageOrCommentContents'
+                    $ref: "#/components/schemas/MessageOrCommentContents"
                   timestamp:
-                    $ref: '#/components/schemas/TimeStamp'
+                    $ref: "#/components/schemas/TimeStamp"
                   sender:
-                    $ref: '#/components/schemas/ValidName'
+                    $ref: "#/components/schemas/ValidName"
                 example:
                   messageId: "abcdef012345"
                   content: "Hello!"
@@ -562,9 +528,9 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/MessageOrCommentId'
+            $ref: "#/components/schemas/MessageOrCommentId"
       responses:
-        '200':
+        "200":
           description: List of comments
           content:
             application/json:
@@ -586,21 +552,21 @@ paths:
                     description: the array of comment ids for each comment
                     type: array
                     items:
-                      $ref: '#/components/schemas/MessageOrCommentId'
+                      $ref: "#/components/schemas/MessageOrCommentId"
                     minItems: 0
                     maxItems: 999999999
                   senderIds:
                     description: the array of sender ids for each comment
                     type: array
                     items:
-                      $ref: '#/components/schemas/UserId'
+                      $ref: "#/components/schemas/UserId"
                     minItems: 0
                     maxItems: 999999999
                   contents:
                     description: the array of contents for each comment
                     type: array
                     items:
-                      $ref: '#/components/schemas/MessageOrCommentContents'
+                      $ref: "#/components/schemas/MessageOrCommentContents"
                     minItems: 0
                     maxItems: 999999999
                   timestamps:
@@ -632,11 +598,11 @@ paths:
               type: object
               properties:
                 conversationId:
-                  $ref: '#/components/schemas/ConversationId'
+                  $ref: "#/components/schemas/ConversationId"
                 username:
-                  $ref: '#/components/schemas/ValidName'
+                  $ref: "#/components/schemas/ValidName"
       responses:
-        '204':
+        "204":
           description: User added to group successfully
 
   /conversations/kickuser:
@@ -654,17 +620,17 @@ paths:
               type: object
               properties:
                 conversationId:
-                  $ref: '#/components/schemas/ConversationId'
+                  $ref: "#/components/schemas/ConversationId"
                 username:
-                  $ref: '#/components/schemas/ValidName'
+                  $ref: "#/components/schemas/ValidName"
       responses:
-        '200':
+        "200":
           content:
             application/json:
               example:
                 message: "OK"
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: "#/components/schemas/SuccessResponse"
           description: User left the group successfully
 
   /conversations/photo:
@@ -686,17 +652,17 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 1000000
-                  pattern : "^.*$"
+                  pattern: "^.*$"
                 conversationId:
-                  $ref: '#/components/schemas/ConversationId'
+                  $ref: "#/components/schemas/ConversationId"
       responses:
-        '200':
+        "200":
           content:
             application/json:
               example:
                 message: "OK"
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: "#/components/schemas/SuccessResponse"
           description: Group photo updated successfully
 
   /conversations/name:
@@ -704,9 +670,9 @@ paths:
       tags: ["group"]
       description: Update group name
       summary: Update group name
-      # operationID verb should be "replace", as of ibm-operationid-naming-convention. 
+      # operationID verb should be "replace", as of ibm-operationid-naming-convention.
       # But the professor wanted this name.
-      operationId: setGroupName 
+      operationId: setGroupName
       requestBody:
         required: true
         content:
@@ -715,18 +681,18 @@ paths:
               description: the object that contains the new name for a group and the group_id
               type: object
               properties:
-                  conversationId:
-                    $ref: '#/components/schemas/ConversationId'
-                  name:
-                    $ref: '#/components/schemas/ValidName'
+                conversationId:
+                  $ref: "#/components/schemas/ConversationId"
+                name:
+                  $ref: "#/components/schemas/ValidName"
       responses:
-        '201':
+        "201":
           content:
             application/json:
               example:
                 message: "OK"
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: "#/components/schemas/SuccessResponse"
           description: Group name updated successfully
 
 # Security Definitions
@@ -768,20 +734,20 @@ components:
       maxLength: 128
       pattern: "^[A-Za-z0-9-]*$"
     ValidName:
-        description: A valid, pattern-checked name for a user or group.
-        type: string
-        minLength: 1
-        maxLength: 32
-        # need the pattern to satisfy the IBM lords.
-        pattern: "^.*$" # any string. Could also be Emojis. (maybe support for images/gifs?)
-        example: "Username"
+      description: A valid, pattern-checked name for a user or group.
+      type: string
+      minLength: 1
+      maxLength: 32
+      # need the pattern to satisfy the IBM lords.
+      pattern: "^.*$" # any string. Could also be Emojis. (maybe support for images/gifs?)
+      example: "Username"
     ValidPicture:
-        description: A valid image link for a user or group photo.
-        type: string
-        minLength: 1
-        maxLength: 1000000
-        pattern: "^.*$"
-        example: "https://wasatext.com/pictures/1"
+      description: A valid image link for a user or group photo.
+      type: string
+      minLength: 1
+      maxLength: 1000000
+      pattern: "^.*$"
+      example: "https://wasatext.com/pictures/1"
     TimeStamp:
       description: A valid timestamp
       type: string
