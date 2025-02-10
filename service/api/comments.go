@@ -55,6 +55,17 @@ func (rt *_router) GetComments(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
+	// get the sender's username for each comment
+	for i := range senderIDs {
+		sender_username, err := rt.db.GetUserName(senderIDs[i])
+		if err != nil {
+			rt.baseLogger.WithError(err).Error("Error getting the sender's username")
+			http.Error(w, "Failed to get the sender's username", http.StatusInternalServerError)
+			return
+		}
+		senderIDs[i] = sender_username
+	}
+
 	// create the response
 	type commentResponse struct {
 		CommentID string `json:"commentId"`
