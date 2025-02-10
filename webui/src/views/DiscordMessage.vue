@@ -183,7 +183,7 @@
 						:key="index"
 						:style="{
 							backgroundColor: comment.commenters.includes(
-								$token.value
+								$username.value
 							)
 								? '#6f562c'
 								: '#282c34',
@@ -195,6 +195,15 @@
 						<span class="count-badge bg-dark rounded-pill px-2">{{
 							comment.count
 						}}</span>
+						<!-- display the users that put that comment in -->
+						<div
+							v-for="(commenter, index) in comment.commenters"
+							:key="index"
+							class="small"
+						>
+							<!-- display the username, not the userID (requires request) -->
+							{{ commenter }}
+						</div>
 					</div>
 				</div>
 				<!-- Read / Received display -->
@@ -356,7 +365,7 @@ export default {
 			const ownComment = response.data.filter(
 				(comment) =>
 					comment.content === text &&
-					comment.senderId === this.$token.value
+					comment.senderId === this.$username.value
 			)[0];
 
 			try {
@@ -393,7 +402,7 @@ export default {
 				comments.some(
 					(comment) =>
 						comment.content === text &&
-						comment.senderId === this.$token.value
+						comment.senderId === this.$username.value
 				)
 			) {
 				console.log("Comment already exists from you");
