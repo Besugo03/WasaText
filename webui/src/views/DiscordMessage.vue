@@ -229,7 +229,10 @@
 								></path>
 							</svg>
 						</div>
-						<div v-if="isReceivedByAll" class="text-muted">
+						<div
+							v-if="isReceivedByAll && isReadByAll"
+							class="text-muted"
+						>
 							<svg
 								viewBox="0 0 24 24"
 								width="16"
