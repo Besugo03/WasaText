@@ -488,33 +488,33 @@ paths:
       responses:
         "204":
           description: Comment removed successfully
-    get:
-      tags: ["message"]
-      description: Retrieve a single comment's information
-      summary: Retrieve a single comment's information
-      operationId: getComments
-      responses:
-        "200":
-          description: List of comments
-          content:
-            application/json:
-              schema:
-                description: the object that contains the comment for a message
-                type: object
-                properties:
-                  messageId:
-                    $ref: "#/components/schemas/MessageOrCommentId"
-                  content:
-                    $ref: "#/components/schemas/MessageOrCommentContents"
-                  timestamp:
-                    $ref: "#/components/schemas/TimeStamp"
-                  sender:
-                    $ref: "#/components/schemas/ValidName"
-                example:
-                  messageId: "abcdef012345"
-                  content: "Hello!"
-                  timestamp: "2021-01-01T00:00:00Z"
-                  sender: "Besugo"
+    # get:
+    #   tags: ["message"]
+    #   description: Retrieve a single comment's information
+    #   summary: Retrieve a single comment's information
+    #   operationId: getComments
+    #   responses:
+    #     "200":
+    #       description: List of comments
+    #       content:
+    #         application/json:
+    #           schema:
+    #             description: the object that contains the comment for a message
+    #             type: object
+    #             properties:
+    #               messageId:
+    #                 $ref: "#/components/schemas/MessageOrCommentId"
+    #               content:
+    #                 $ref: "#/components/schemas/MessageOrCommentContents"
+    #               timestamp:
+    #                 $ref: "#/components/schemas/TimeStamp"
+    #               sender:
+    #                 $ref: "#/components/schemas/ValidName"
+    #             example:
+    #               messageId: "abcdef012345"
+    #               content: "Hello!"
+    #               timestamp: "2021-01-01T00:00:00Z"
+    #               sender: "Besugo"
 
   /conversation/message/getcomments/{messageID}:
     get:
