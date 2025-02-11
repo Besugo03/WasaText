@@ -7,6 +7,7 @@ COPY ./webui ./webui
 # setting working directory
 WORKDIR /src/webui/
 # run the build-prod script for decaf
+RUN yarn install 
 RUN yarn run build-prod
 # setup non-ephemeral container
 FROM nginx:stable
