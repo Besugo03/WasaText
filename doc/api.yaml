@@ -584,7 +584,7 @@ paths:
                     minItems: 0
 
   /conversations/adduser:
-    post:
+    put:
       tags: ["group"]
       description: Add a user to a group (more generally, to the conversation)
       summary: Add a user to a group

@@ -1,0 +1,133 @@
+POST /session
+    GO backend : 
+        File : api-handler.go
+        Line : 10
+    Vue frontend :
+        File :
+        Line :
+PUT /user/username
+    GO backend : 
+        File : api-handler.go
+        Line : 11
+    Vue frontend :
+        File :
+        Line :
+PUT /user/photo
+    GO backend : 
+        File : api-handler.go
+        Line : 12
+    Vue frontend :
+        File :
+        Line :
+GET /users
+    GO backend : 
+        File : api-handler.go
+        Line : 21
+    Vue frontend :
+        File :
+        Line :
+GET /conversations 
+    GO backend : 
+        File : api-handler.go
+        Line : 24
+    Vue frontend :
+        File :
+        Line :
+GET /conversations/info/{conversationID}
+    GO backend : 
+        File : api-handler.go
+        Line : 26
+    Vue frontend :
+        File :
+        Line :
+POST /conversations/create
+    GO backend : 
+        File : api-handler.go
+        Line : 27
+    Vue frontend :
+        File :
+        Line :
+POST  /conversations/message
+    GO backend : 
+        File : api-handler.go
+        Line : 31
+    Vue frontend :
+        File :
+        Line :
+DELETE /conversations/message/delete/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line : 34
+    Vue frontend :
+        File :
+        Line :
+GET /conversations/message/info/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line : 32
+    Vue frontend :
+        File :
+        Line :
+POST /conversations/message/forward
+    GO backend : 
+        File : api-handler.go
+        Line : 33
+    Vue frontend :
+        File :
+        Line :
+POST /conversations/message/comment/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line : 40
+    Vue frontend :
+        File :
+        Line :
+DELETE /conversations/message/comment/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line :41
+    Vue frontend :
+        File :
+        Line :
+GET /conversations/message/comment/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line : 42
+    Vue frontend :
+        File :
+        Line :
+GET /conversations/message/getcomments/{messageID}
+    GO backend : 
+        File : api-handler.go
+        Line : 43
+    Vue frontend :
+        File :
+        Line :
+PUT /conversations/adduser
+    GO backend : 
+        File : api-handler.go
+        Line : 28
+    Vue frontend :
+        File :
+        Line :
+PUT /conversations/kickuser
+    GO backend : 
+        File : api-handler.go
+        Line : 29
+    Vue frontend :
+        File :
+        Line :
+PUT /conversations/photo
+    GO backend : 
+        File : api-handler.go
+        Line : 35
+    Vue frontend :
+        File :
+        Line :
+PUT /conversations/name
+    GO backend : 
+        File : api-handler.go
+        Line : 36
+    Vue frontend :
+        File :
+        Line :
