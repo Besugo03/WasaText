@@ -1,8 +1,14 @@
-FROM node:20 as builder
-WORKDIR /app
-COPY webui webui
-WORKDIR /app/webui
+# Import immagine minimal di node LTS
+FROM node:lts as builder
+# setting working directory
+WORKDIR /src/
+# Copying contents of webui
+COPY ./webui ./webui
+# setting working directory
+WORKDIR /src/webui/
+# run the build-prod script for decaf
 RUN yarn run build-prod
+# setup non-ephemeral container
 FROM nginx:stable
-COPY --from=builder /app/webui/dist /usr/share/nginx/html
-# capitalized
+# copy the build from the previous stage
+COPY --from=builder /src/webui/dist /usr/share/nginx/html
