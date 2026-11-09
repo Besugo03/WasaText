@@ -4,6 +4,8 @@ My entry for the 2024/2025 WASA course project.
 
 * WASApp is a chatting app, with GO backend, Vue frontend and thorough API documentation through OpenAPI standards, following the IBM-openapi ruleset.
 
+<img src="demo/conversations.mp4.gif" alt="Conversations">
+
 # Important notice
 
 This project is based on Fantastic Coffee (decaffeinated), a project structure focused on teaching Docker, API request routing and frontend/backend webdev.
