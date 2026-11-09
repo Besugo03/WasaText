@@ -4,79 +4,56 @@ My entry for the 2024/2025 WASA course project.
 
 * WASApp is a chatting app, with GO backend, Vue frontend and thorough API documentation through OpenAPI standards, following the IBM-openapi ruleset.
 
+# Important notice
+
+This project is based on Fantastic Coffee (decaffeinated), a project structure focused on teaching Docker, API request routing and frontend/backend webdev.
+This is NOT ment for deployment or a real production environment, and serves as a proof-of concept.
+
 ## Notes on the implementation
 
-- *No images are stored in the database. Every image is rendered from an URL.*
-  - If an image is already on the internet, why would i need to copy it again on my database when I can use someone else's?
-  - This gets rid of a lot of headaches with formats, size limits etc... when creating the app
-  - This gives users freedom to host their images on whatever sites they prefer, giving them no limits on their resolution
-    - If a user is not capable or does not want to go through the hassle of hosting their own, there is still an **easy-to-use** upload button to upload their images easily and quickly so that they can be used in the chats. (this is powered by an API, in this case the imgBB one.)
-    - From a **privacy perspective**, if the user hosts their own images, it means they are free to shut them down, leaving no trace of them in the database, other than their URLs, which at that point result to nothing.
-- *Multiple chats with the same person*
-  - "Removing" this thing could've been a simple check in the backend, but it's a feature i would've liked to see for a long time in chatting apps. Being able to exchange things like vacation photos, projects information etc... without having to create a group with a single person (which in my opinion makes less sense and is less intuitive than just a normal chat) is really handy.
-  - Kinda similar to how telegram lets you make multiple chats with one person, except it forces you to make it a "private chat".
-- *Groups and conversations are the same thing*
-  - Again, i could've just made two tables, but at their core, a group is just a conversation with more than one person, so it would make little to no sense to treat them differently.
-  - This also gives you the freedom to have, in combination with the previous feature, one-on-one chats that **don't force you** to the picture and name of the other person, without the step of creating a group.
-    - This implies being also able to have "**private**" conversations with someone, e.g. you could rename the one-on-one conversation to some other random name and give it a random profile picture, and if someone snooped at your conversation history on the left, they wouldn't know who actually sent the message unless they took your chats and opened it.
-  - the "group" characteristic is thus **infereced** from just the number of people participating in a conversation.
-  - This was inspired by **Discord's** handling of conversations (specifically the Private Messages section), where a private message is a conversation containing one or more people, and handled the exact same way.
-- *You can create a chat with yourself*
-  - Another feature from Telegram. There, you only have the "saved messages" section, which is literally a chat with yourself. In there you can also send messages with a delay to use as a reminder app, very cool. Having multiple chats with yourself lets you organize stuff like storing ideas for different projects, TODOs etc...
+* Since the project did not have requirements or specifications on image storage :
+  * *Every image is rendered from an URL.*
+  * This gives users freedom to host their images on whatever sites they prefer, giving them no limits on their resolution and no server-side load.
+  * If a user is not capable or does not want to go through the hassle of hosting their own, there is still an **easy-to-use** upload button to upload their images easily and quickly so that they can be used in the chats. (this is powered by an API, in this case the imgBB one.)
+  * From a **privacy perspective**, if the user hosts their own images, it means they are free to shut them down, leaving no trace of them in the database, other than their URLs, which at that point result to nothing.
+* *Multiple chats with the same person*
+  * "Removing" this thing could've been a simple check in the backend, but it's a feature i would've liked to see for a long time in chatting apps. Being able to exchange things like vacation photos, projects information etc... without having to create a group with a single person (which in my opinion makes less sense and is less intuitive than just a normal chat) is really handy.
+* *Groups and conversations are the same thing*
+  * Again, i could've just made two tables, but at their core, a group is just a conversation with more than one person, so it would make little to no sense to treat them differently.
+  * This also gives you the freedom to have, in combination with the previous feature, one-on-one chats that **don't force you** to the picture and name of the other person, without the step of creating a group.
+    * This implies being also able to have "**private**" conversations with someone, e.g. you could rename the one-on-one conversation to some other random name and give it a random profile picture, and if someone snooped at your conversation history, they wouldn't know if that user even exists.
+  * the "group" characteristic is thus **inferred** from just the number of people participating in a conversation.
+* *You can create a chat with yourself*
+  * Having multiple chats with yourself lets you organize stuff like storing ideas for different projects, TODOs etc...
 
 ## General structure
 
 #### Fantastic coffee (decaffeinated)
 
-This repository contains the basic structure for [Web and Software Architecture](http://gamificationlab.uniroma1.it/en/wasa/) homework project.
+This repository is built on the basic structure for [Web and Software Architecture](http://gamificationlab.uniroma1.it/en/wasa/) homework project.
 
 "Fantastic coffee (decaffeinated)" is not suited for production environments.
 
 ###### Project structure
 
 * `cmd/` contains all executables; Go programs here should only do "executable-stuff", like reading options from the CLI/env, etc.
-	* `cmd/healthcheck` is an example of a daemon for checking the health of servers daemons; useful when the hypervisor is not providing HTTP readiness/liveness probes (e.g., Docker engine)
-	* `cmd/webapi` contains an example of a web API server daemon
+  * `cmd/healthcheck` is an example of a daemon for checking the health of servers daemons; useful when the hypervisor is not providing HTTP readiness/liveness probes (e.g., Docker engine)
+  * `cmd/webapi` contains an example of a web API server daemon
 * `demo/` contains a demo config file
 * `doc/` contains the documentation (usually, for APIs, this means an OpenAPI file)
 * `service/` has all packages for implementing project-specific functionalities
-	* `service/api` contains an example of an API server
-	* `service/globaltime` contains a wrapper package for `time.Time` (useful in unit testing)
+  * `service/api` contains an example of an API server
+  * `service/globaltime` contains a wrapper package for `time.Time` (useful in unit testing)
 * `vendor/` is managed by Go, and contains a copy of all dependencies
 * `webui/` is an example of a web frontend in Vue.js; it includes:
-	* Bootstrap JavaScript framework
-	* a customized version of "Bootstrap dashboard" template
-	* feather icons as SVG
-	* Go code for release embedding
+  * Bootstrap JavaScript framework
+  * a customized version of "Bootstrap dashboard" template
+  * feather icons as SVG
+  * Go code for release embedding
 
 Other project files include:
+
 * `open-node.sh` starts a new (temporary) container using `node:20` image for safe and secure web frontend development (you don't want to use `node` in your system, do you?).
-
-###### Go vendoring
-
-This project uses [Go Vendoring](https://go.dev/ref/mod#vendoring). You must use `go mod vendor` after changing some dependency (`go get` or `go mod tidy`) and add all files under `vendor/` directory in your commit.
-
-For more information about vendoring:
-
-* https://go.dev/ref/mod#vendoring
-* https://www.ardanlabs.com/blog/2020/04/modules-06-vendoring.html
-
-###### Node/YARN vendoring
-
-This repository uses `yarn` and a vendoring technique that exploits the ["Offline mirror"](https://yarnpkg.com/features/caching). As for the Go vendoring, the dependencies are inside the repository.
-
-You should commit the files inside the `.yarn` directory.
-
-###### How to set up a new project from this template
-
-You need to:
-
-* Change the Go module path to your module path in `go.mod`, `go.sum`, and in `*.go` files around the project
-* Rewrite the API documentation `doc/api.yaml`
-* If no web frontend is expected, remove `webui` and `cmd/webapi/register-webui.go`
-* Update top/package comment inside `cmd/webapi/main.go` to reflect the actual project usage, goal, and general info
-* Update the code in `run()` function (`cmd/webapi/main.go`) to connect to databases or external resources
-* Write API code inside `service/api`, and create any further package inside `service/` (or subdirectories)
 
 ###### How to build
 
@@ -113,15 +90,13 @@ If you want to launch the WebUI, open a new tab and launch:
 yarn run dev
 ```
 
-###### How to build for production / homework delivery
+###### How to build for production
 
 ```shell
 ./open-node.sh
 # (here you're inside the container)
 yarn run build-prod
 ```
-
-For "Web and Software Architecture" students: before committing and pushing your work for grading, please read the section below named "My build works when I use `yarn run dev`, however there is a Javascript crash in production/grading"
 
 ###### Known issues
 
