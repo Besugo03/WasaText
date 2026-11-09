@@ -4,8 +4,13 @@ My entry for the 2024/2025 WASA course project.
 
 * WASApp is a chatting app, with GO backend, Vue frontend and thorough API documentation through OpenAPI standards, following the IBM-openapi ruleset.
 
+### Embeds and custom emojis
 <img src="demo/embeds and gifs.mp4.gif" alt="embeds and gifs">
+
+### No groups, no chats, just Conversations
 <img src="demo/conversations.mp4.gif" alt="Conversations">
+
+### Mobile-friendly UI and instant updates to all clients
 <img src="demo/hamburger and profile.mp4.gif" alt="hamburger and profile">
 
 # Important notice
